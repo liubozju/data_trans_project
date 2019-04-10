@@ -53,7 +53,7 @@ typedef struct GPRS{
 }gprs;
 
 
-
+extern gprs gGprs;
 
 
 extern int gDeviceConnect(void);

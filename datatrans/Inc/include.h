@@ -15,6 +15,7 @@
 #include "message.h"
 #include "gprs.h"
 #include "Interactive.h"
+#include "upgrade.h"
 
 #endif
 

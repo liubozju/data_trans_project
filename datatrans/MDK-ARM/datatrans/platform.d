@@ -66,3 +66,5 @@ datatrans\platform.o: ..\Src\inc\Interactive.h
 datatrans\platform.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\platform.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
 datatrans\platform.o: ../Inc/log.h
+datatrans\platform.o: ..\Src\upgrade.h
+datatrans\platform.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h

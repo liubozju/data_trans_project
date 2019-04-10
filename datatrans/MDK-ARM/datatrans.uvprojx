@@ -349,7 +349,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F405xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;..\Src\flag;..\Src\flash;..\Src\platform;..\Src\delay;..\Src\message;..\Src\gprs;..\Src\register;..\Src\cjson;..\Src\inc</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;..\Src\flag;..\Src\flash;..\Src\platform;..\Src\delay;..\Src\message;..\Src\gprs;..\Src\register;..\Src\cjson;..\Src\inc;..\Src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -492,6 +492,11 @@
               <FileType>1</FileType>
               <FilePath>..\Src\gprs\gprs.c</FilePath>
             </File>
+            <File>
+              <FileName>conversion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\conversion.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -541,6 +546,11 @@
               <FileName>register.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\register\register.c</FilePath>
+            </File>
+            <File>
+              <FileName>upgrade.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\upgrade.c</FilePath>
             </File>
           </Files>
         </Group>

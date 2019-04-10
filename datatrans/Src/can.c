@@ -47,6 +47,8 @@
 #include "queue.h"
 #include "task.h"
 
+CAN_ID can_id;
+
 /* USER CODE BEGIN 0 */
 CAN_TxHeaderTypeDef   TxMessage1;     
 CAN_TxHeaderTypeDef   TxMessage2;    
@@ -66,11 +68,11 @@ void MX_CAN1_Init(void)
 	CAN_FilterTypeDef  sFilterConfig;
 
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 10;
+  hcan1.Init.Prescaler = 7;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_5TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_6TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
@@ -97,7 +99,7 @@ void MX_CAN1_Init(void)
    {
 		 printf("init failed 2");
      _Error_Handler(__FILE__, __LINE__); 
-		} 
+	 } 
 	 HAL_CAN_Start(&hcan1);
 	 HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
 	
@@ -114,20 +116,18 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
   /* USER CODE END CAN1_MspInit 0 */
     /* CAN1 clock enable */
     __HAL_RCC_CAN1_CLK_ENABLE();
-  
+		__HAL_RCC_GPIOA_CLK_ENABLE();
     /**CAN1 GPIO Configuration    
-    PG0     ------> CAN1_RX
-    PG1     ------> CAN1_TX 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
-    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 3);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
@@ -150,7 +150,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     PG0     ------> CAN1_RX
     PG1     ------> CAN1_TX 
     */
-    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
 
     /* CAN1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
@@ -216,8 +216,7 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
 		if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,sTR_Buf,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
 		{
 			LOG(LOG_ERROR,"sending wrong\r\n");
-		 _Error_Handler(__FILE__, __LINE__); 
-		 return 0;
+		  return 0;
 		}
 		sCount += 8;
 	}
@@ -231,7 +230,6 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
 		if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,sTR_Buf,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
 		{
 			LOG(LOG_ERROR,"sending wrong\r\n");
-		 _Error_Handler(__FILE__, __LINE__); 
 		 return 0;
 		}		
 	}
@@ -254,7 +252,6 @@ void CAN_TRANSMIT1(void)
    if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,TR_BUF,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
   {
 		printf("sending wrong\r\n");
-   _Error_Handler(__FILE__, __LINE__); 
   }
 }
 /* USER CODE END 1 */

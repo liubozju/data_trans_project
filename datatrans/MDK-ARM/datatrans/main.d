@@ -67,4 +67,6 @@ datatrans\main.o: ..\Src\gprs\gprs.h
 datatrans\main.o: ..\Src\inc\Interactive.h
 datatrans\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\main.o: ../Inc/log.h
+datatrans\main.o: ..\Src\upgrade.h
+datatrans\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h

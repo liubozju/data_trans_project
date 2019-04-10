@@ -53,6 +53,13 @@ typedef struct
 	uint8_t Data[8];
 }CAN_RecvMsg;
 
+typedef struct{
+	uint16_t RecID;
+	uint16_t SendID;
+	uint8_t Can_num;
+}CAN_ID;
+
+extern CAN_ID can_id;
 
 extern CAN_RecvMsg can_recvmsg;	
 /* USER CODE END Includes */

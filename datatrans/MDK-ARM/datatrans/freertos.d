@@ -67,3 +67,5 @@ datatrans\freertos.o: ..\Src\gprs\gprs.h
 datatrans\freertos.o: ..\Src\inc\Interactive.h
 datatrans\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\freertos.o: ../Inc/log.h
+datatrans\freertos.o: ..\Src\upgrade.h
+datatrans\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h

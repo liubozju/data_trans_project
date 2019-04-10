@@ -28,7 +28,7 @@ extern int  MessageSendFromISR(char *msg,u8 head);
 extern void deviceSend(u8 head);
 extern void MsgInfoConfig(void);
 extern int  MessageSend(const char *msg,u8 head);
-
+extern void deviceDirectSend(char * str);
 
 
 

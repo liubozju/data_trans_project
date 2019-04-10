@@ -55,3 +55,10 @@ datatrans\message.o: ../Inc/log.h
 datatrans\message.o: ..\Src\register\register.h
 datatrans\message.o: ..\Src\delay\delay.h
 datatrans\message.o: ../Inc/tim.h
+datatrans\message.o: ..\Src\conversion.h
+datatrans\message.o: ..\Src\cjson\cjson.h
+datatrans\message.o: ../Inc/can.h
+datatrans\message.o: ..\Src\upgrade.h
+datatrans\message.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
+datatrans\message.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
+datatrans\message.o: ../Inc/gpio.h

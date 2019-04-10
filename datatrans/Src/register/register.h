@@ -14,7 +14,16 @@
 
 #define REGISTER_REP  "regrepok"
 #define PBREADY "PBREADY"
+#define PACKSTART "packstart"
+#define PACKEND "packend"
+
+#define CONFIG "config"
+#define CAN_NUM "cannum"
+#define RECID "RecID"
+#define SENDID "SendID"
 #define TCP_REV "<"
+#define LEFT_JSON	"{"
+#define RIGHT_JSON	"}"
 
 
 int gDeviceRegister(void);

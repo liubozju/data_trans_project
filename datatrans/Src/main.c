@@ -29,6 +29,11 @@ void StartTask(void *pvParameters);   //任务函数声明
 #define InteRaction_STK_SIZE     256                  //任务堆栈大小
 TaskHandle_t InteRactionTaskHanhler;                  //任务句柄
 
+/*升级任务定义*/
+#define Upgrade_TASK_PRIO    8                    //任务优先级
+#define Upgrade_STK_SIZE     256                  //任务堆栈大小
+TaskHandle_t UpgradeTaskHanhler;                  //任务句柄
+
 /*事件标志组的定义*/
 EventGroupHandle_t InteracEventHandler;
 
@@ -123,7 +128,7 @@ void StartTask(void *pvParameter)
 							 (UBaseType_t   ) InteRaction_TASK_PRIO,       
 							 (TaskHandle_t* ) &InteRactionTaskHanhler          
 	            );							 
-//	/*创建开始任务*/
+	/*创建开始任务*/
 //	xTaskCreate(	(TaskFunction_t) TESTTask,				/*任务函数*/
 //								(const char *)   "TESTTask",			/*任务名称*/
 //								(uint16_t		)			TEST_STK_SIZE,	/*任务堆栈*/
@@ -131,6 +136,14 @@ void StartTask(void *pvParameter)
 //								(UBaseType_t )		TEST_TASK_PRIO,/*任务优先级*/
 //								(TaskHandle_t* ) &TESTTaskHanhler /*任务句柄*/
 //									);
+								
+	xTaskCreate(	(TaskFunction_t) UpgradeTask,				/*任务函数*/
+								(const char *)   "UpgradeTask",			/*任务名称*/
+								(uint16_t		)			Upgrade_STK_SIZE,	/*任务堆栈*/
+								(void *)					NULL,						/*任务参数*/
+								(UBaseType_t )		Upgrade_TASK_PRIO,/*任务优先级*/
+								(TaskHandle_t* ) &UpgradeTaskHanhler /*任务句柄*/
+									);
 
 		xTimerStart(connectTimerHandler,portMAX_DELAY);
 //    xTimerStart(CSQTimerHandler,portMAX_DELAY);
@@ -145,19 +158,15 @@ void StartTask(void *pvParameter)
 
 void TESTTask(void *pvParameter)
 {
-//	 taskENTER_CRITICAL(); 
 		
 		LOG(LOG_DEBUG,"this is test task!\r\n");
 
 	 uint8_t data[100]="this is my can send data task\0";
-	while(1)
-	{
-		gCAN_SendData(0x00001314,1,0,data);
-		vTaskDelay(2000);
-	}
-		
- //  taskEXIT_CRITICAL();     					 
-
+		while(1)
+		{
+			gCAN_SendData(0x14,0,0,data);
+			vTaskDelay(2000);
+		}
 }
 
 

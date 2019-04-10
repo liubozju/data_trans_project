@@ -27,16 +27,22 @@ Project File Date:  03/21/2019
 <h2>Output:</h2>
 *** Using Compiler 'V5.05 update 2 (build 169)', folder: 'D:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'datatrans'
-compiling message.c...
-..\Src\message\message.c(140): warning:  #111-D: statement is unreachable
-        vPortFree(buf);
-..\Src\message\message.c(190): warning:  #111-D: statement is unreachable
-        vPortFree(buf);
-..\Src\message\message.c: 2 warnings, 0 errors
+compiling upgrade.c...
+..\Src\upgrade.c(49): warning:  #111-D: statement is unreachable
+                        return;
+..\Src\upgrade.c(77): warning:  #940-D: missing return statement at end of non-void function "sInterUpgradeProcess"
+  }
+..\Src\upgrade.c(62): warning:  #177-D: variable "ret" was declared but never referenced
+        int ret = -1;
+..\Src\upgrade.c(91): warning:  #940-D: missing return statement at end of non-void function "sametimeUpgrade"
+  }
+..\Src\upgrade.c(82): warning:  #177-D: variable "ret" was declared but never referenced
+        int ret = -1;
+..\Src\upgrade.c: 5 warnings, 0 errors
 linking...
-Program Size: Code=28824 RO-data=712 RW-data=452 ZI-data=34052  
+Program Size: Code=39296 RO-data=1108 RW-data=488 ZI-data=34360  
 FromELF: creating hex file...
-"datatrans\datatrans.axf" - 0 Error(s), 2 Warning(s).
+"datatrans\datatrans.axf" - 0 Error(s), 5 Warning(s).
 
 <h2>Software Packages used:</h2>
 
