@@ -4,6 +4,9 @@
 #include "stm32f4xx_hal.h"
 
 
+typedef const char c8;
+
+
 typedef int32_t  s32;
 typedef int16_t s16;
 typedef int8_t  s8;

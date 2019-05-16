@@ -223,7 +223,7 @@ void USART2_IRQHandler(void)
 		__HAL_UART_CLEAR_IDLEFLAG(&huart2);  
 		MessageReceiveFromISR((char *)usart2RecBuf);
 		usart2RecLen = 0;
-		memset(usart2RecBuf,0,1024);
+		memset(usart2RecBuf,0,2500);
 	}
   HAL_UART_IRQHandler(&huart2);
 }

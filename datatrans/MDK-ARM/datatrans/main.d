@@ -70,3 +70,5 @@ datatrans\main.o: ../Inc/log.h
 datatrans\main.o: ..\Src\upgrade.h
 datatrans\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+datatrans\main.o: ../Src/crc.h
+datatrans\main.o: ../Src/md5.h

@@ -21,20 +21,11 @@ int gDeviceRegister(void)
 	taskENTER_CRITICAL();
 	RigisterBinarySemaphore = xSemaphoreCreateBinary();
 	
-//	cJSON *res = cJSON_CreateObject();
-//	cJSON_AddStringToObject(res, "type", "register");
-//	cJSON_AddStringToObject(res, "imsi", (const char *)"460022201575463");
-//		cJSON_AddStringToObject(res, "imei", (const char *)"460022201575463");
-//	cJSON_AddStringToObject(res, "imei",  (const char *)gGprs.gimei);
-//	cJSON_AddNumberToObject(res, "csq", gGprs.csq);
-//	cJSON_AddNumberToObject(res, "hardv", 10);
-//	cJSON_AddStringToObject(res, "softv", "0102\0");
   char * str = pvPortMalloc(200);
 	memset(str,0,200);
 	sprintf(str,DEVICE_REGISTER_PACK,gGprs.gimsi,gGprs.gimei,gGprs.csq);
 	LOG(LOG_INFO,"str:%s \r\n",str);	
 
-	//str = cJSON_Print(res);
 	taskEXIT_CRITICAL();
   BaseType_t err;
   for(int i=0;i<3;i++)
@@ -43,7 +34,6 @@ int gDeviceRegister(void)
 		err = xSemaphoreTake(RigisterBinarySemaphore,10000);
 	  if(err == pdTRUE)
 		{
-	    //cJSON_Delete(res);
 			vPortFree(str);
 			vSemaphoreDelete(RigisterBinarySemaphore);
       LOG(LOG_DEBUG,"register ok\r\n");
@@ -51,7 +41,6 @@ int gDeviceRegister(void)
 		}
 		LOG(LOG_ERROR,"register %d times\r\n",i);
   }
-	//cJSON_Delete(res); 
 	vPortFree(str);	
 	LOG(LOG_ERROR,"register failed\r\n");
 	LOG(LOG_ERROR,"System Rebooting\r\n");

@@ -13,6 +13,8 @@
 "datatrans\message.o"
 "datatrans\gprs.o"
 "datatrans\conversion.o"
+"datatrans\crc.o"
+"datatrans\md5.o"
 "datatrans\main.o"
 "datatrans\gpio.o"
 "datatrans\freertos.o"

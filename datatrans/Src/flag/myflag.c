@@ -19,9 +19,9 @@ void platformFlagInit(void )
 		firstTimeFlag[0] = 0x55;
 		firstTimeFlag[1] = 0xAA;
 		firstTimeFlag[2] = '\0';
-		STMFLASH_WriteByte(FIRST_TIME_FLAG,(uint8_t *)firstTimeFlag,3);
+		STMFLASH_Write(FIRST_TIME_FLAG,(uint8_t *)firstTimeFlag,3);
 		memcpy(updateFlag,"goAPP\0",strlen("goAPP\0"));
-		STMFLASH_WriteByte(UPDATE_FLAG,(uint8_t *)updateFlag,20);
+		STMFLASH_Write(UPDATE_FLAG,(uint8_t *)updateFlag,20);
 	}
 }
 

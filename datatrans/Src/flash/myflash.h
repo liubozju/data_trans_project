@@ -12,13 +12,19 @@
 
 
 /*标志位地址*/
-#define WRITE_ADDR_START 0X080C0000		//扇区10  用于保存数据，128K大小
+
+/*配置存储区地址*/
+#define WRITE_ADDR_START 0X08020000							//扇区5  用于保存数据，128K大小
 #define FIRST_TIME_FLAG	 (WRITE_ADDR_START+10)		//初始化永久数据区域，仅仅运行一次
 #define UPDATE_FLAG			(FIRST_TIME_FLAG+10)		//尽量不使用2K边缘的数据单元  存储更新标记  
 
+/**/
 #define testflag1		(UPDATE_FLAG+20)
 #define testflag2		(testflag1+20)
 #define testflag3		(testflag2+20)
+
+/*500K空间的存储地址   每页128K，存储包信息，每页只用128KB*/
+#define PACK_ADDR_START 0X08040000							//扇区6  用于保存数据，128K大小
 
 
 
@@ -48,8 +54,8 @@
 #define FLAG_ADDR_BASE       0x0803A040  //标志位存放地
 
 
-void STMFLASH_Read(uint32_t ReadAddr,uint8_t *pBuffer,uint8_t NumToRead); //按字节读取flash
-void STMFLASH_Write(uint32_t WriteAddr,uint32_t *pBuffer,uint32_t NumToWrite);//按字写入flash
+void STMFLASH_Read(uint32_t ReadAddr,uint8_t *pBuffer,uint32_t NumToRead);	
+void STMFLASH_Write(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite);//按照字节写入数据
 void STMFLASH_WriteByte(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite);//按字节写入flash
 void STMFLASH_Erase(uint32_t EraseAddr);
 
@@ -59,9 +65,6 @@ uint8_t CheckIfInFlash(uint32_t DataAdd,uint8_t * databuf,uint8_t datalen);
 void HxCheckFlash(void);
 
 static uint32_t GetSector(uint32_t Address);								//根据输入地址，返回sector号码
-uint8_t MEM_If_Read_FS (uint8_t *src, uint8_t *dest, uint32_t Len);
-uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len);
-uint16_t MEM_If_Erase_FS(uint32_t start_Add,uint32_t end_Add);
 static uint32_t GetSectorAddr(uint32_t Address);
 
 

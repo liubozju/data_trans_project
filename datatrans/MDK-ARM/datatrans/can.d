@@ -50,3 +50,12 @@ datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers
 datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+datatrans\can.o: ..\Src\inc\Interactive.h
+datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
+datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h
+datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
+datatrans\can.o: ../Src/upgrade.h
+datatrans\can.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
+datatrans\can.o: ..\Src\gprs\gprs.h
+datatrans\can.o: ..\Src\message\message.h

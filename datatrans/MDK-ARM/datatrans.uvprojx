@@ -497,6 +497,16 @@
               <FileType>1</FileType>
               <FilePath>..\Src\conversion.c</FilePath>
             </File>
+            <File>
+              <FileName>crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\crc.c</FilePath>
+            </File>
+            <File>
+              <FileName>md5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\md5.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

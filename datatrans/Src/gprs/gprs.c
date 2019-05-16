@@ -39,7 +39,7 @@ int gDeviceConnect(void)
 			gGprs.gprsFlag.gRegisterFlag =1;
 			gDeviceRegister();
 			gGprs.gprsFlag.gRegisterFlag =0;
-			LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
+			//LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
 			//xTimerStart(NetTimerHandler,portMAX_DELAY);	
 //		  xTimerStart(testTimerHandler,portMAX_DELAY);
 //			xTimerStart(SearchCardTimerHandler,portMAX_DELAY);
@@ -59,15 +59,15 @@ static int sSendRspData(const char *cmd,const char * rsp)
 		u8 count = 0;
 		BaseType_t err;
 		if(gGprs.GprsRepQueue!=NULL)
-	  	{
+	  {
 			err = xQueueOverwrite(gGprs.GprsRepQueue,rsp);		/*将期望回复写入到GPRS回复队列中去*/
 			if(err!=pdTRUE)
 			{
 				LOG(LOG_ERROR,"Rep Send failed\r\n");
 				return -1;
 			}
-  		}
-	  	MessageSend(cmd,0);
+  	}
+	  MessageSend(cmd,0);
 		while(1)
 		{
 			count++;
@@ -129,18 +129,22 @@ static int pdeviceConnect(void)
 {
 	LOG(LOG_TRACE,"Signal Strangth Testing\r\n");
 	sSendRspData("AT\r\n","OK");
+	HAL_Delay(5000);
 //	sSendRspData("ATi8\r\n","OK");	//在4G模组中没有这个版本指令
 	sSendRspData("ATE0\r\n","OK");
+	sSendRspData("AT+COPS?\r\n","OK");
+	sSendRspData("AT+IPR=460800\r\n","OK");
+	MX_USART2_UART_Init(460800);			//提升串口波特率，重新初始化
 	sSendRspData("AT+CMEE=2\r\n","OK");
 	sSendRspData("AT+CPIN?\r\n","+CPIN: READY");
 	sSendRspData("AT+CGREG?\r\n","+CGREG: 0,1");
-	sSendRspData("AT+COPS?\r\n","OK");
 	sSignalJudge();										//在此处加上信号强度的判断
 	
 	// sSendRspData("AT+MIPCALL=1,\"CMNET\"\r\n","OK");
 	// sSendRspData("ATE+MIPCALL?\r\n",".");
 	sSendRspData("AT+CGDCONT=1,\"IP\",\"CMNET\"\r\n","OK");
 	sSendRspData("AT+XIIC=1\r\n","OK");
+	HAL_Delay(1000);
 	sSendRspData("AT+XIIC?\r\n","+XIIC:    1");
 	gTCPIPConfig();
 	if(sSendRspData((const char *)gGprs.gGPRSConnect,"TCPSETUP: 0") != 1)
@@ -173,7 +177,7 @@ void gTCPIPConfig(void)
 	// strcat((char *)gGprs.gGPRSConnect,(const char *)"\",");
 	// strcat((char *)gGprs.gGPRSConnect,(const char *)gGprs.gprsPort);
 	// strcat((char *)gGprs.gGPRSConnect,(const char *)"0,\r\n");			//打开一路TCP连接
-	LOG(LOG_DEBUG,"gGprs.gGPRSConnect: %s\r\n",gGprs.gGPRSConnect);
+	//LOG(LOG_DEBUG,"gGprs.gGPRSConnect: %s\r\n",gGprs.gGPRSConnect);
 }
 
 /*GPRS模组的配置函数---用于初始化相关参数以及建立队列*/

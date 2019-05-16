@@ -59,6 +59,33 @@ typedef struct{
 	uint8_t Can_num;
 }CAN_ID;
 
+typedef enum{
+	CAN_PRE_OK = 0,
+	CAN_PRE_FAIL,
+}CAN_PRE;
+
+enum{
+	Can_Success = 0x00,
+	Can_SendFail,
+	Can_Not_Respond,
+	Can_Rev_Wrong,
+	Can_Connect_Failed,
+	Can_File_Wrong,
+};
+
+typedef enum{
+	CAN_SEND_ERR = 100,
+	CAN_NO_REV_ERR,
+	CAN_WRONG_REV_ERR,
+	CAN_DECRYPT_ERR,
+	CAN_FILE_ERR,
+}CanErrorCode;
+
+typedef enum{
+	Can_num1 = 1,
+	Can_num2,
+}CAN_NUM_IO;
+
 extern CAN_ID can_id;
 
 extern CAN_RecvMsg can_recvmsg;	
@@ -73,12 +100,16 @@ extern CAN_HandleTypeDef hcan1;
 
 extern void _Error_Handler(char *, int);
 
-void MX_CAN1_Init(void);
+void MX_CAN1_Init(uint32_t RecID);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_TRANSMIT1(void);
-int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data);
+int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data);
 /* USER CODE END Prototypes */
+
+
+extern void CANSendTask(void *pArg);
+extern void gUploadErrorCode(uint8_t errorType);
 
 #ifdef __cplusplus
 }

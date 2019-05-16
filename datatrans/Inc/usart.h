@@ -58,7 +58,7 @@
 #include "main.h"
 #include "sys.h"
 /* USER CODE BEGIN Includes */
-#define usart2RecBufLen  			1024  	 
+#define usart2RecBufLen  			2500  	 
 
 /* USER CODE END Includes */
 

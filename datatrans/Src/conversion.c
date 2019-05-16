@@ -55,7 +55,7 @@ void StrToHex(char* str,uint8_t * hex,int strlen)
 		hex[j] = s1*16+s2;
 	}
 }
-
+/*检查接收到的包是否正确*/
 uint8_t gPackCheck(char * str,uint16_t strlen)
 {
 	int ret = -1;
@@ -64,14 +64,33 @@ uint8_t gPackCheck(char * str,uint16_t strlen)
 	StrToHex(str+2,temp_str,strlen-2);
 	uint8_t checksum = 0;
 	uint8_t arr_len = temp_str[0];
-	for(int i = 1;i<arr_len;i++)
+	for(int i = 0;i<arr_len;i++)
 	{
 		checksum += temp_str[i];
 	}
-	if(checksum == temp_str[arr_len])
+	if(((~checksum)& 0xff) == temp_str[arr_len])
+	{
+		vPortFree(temp_str);
 		return PackOK;
+	}
 	else
+	{
+		vPortFree(temp_str);
 		return PackFail;
+	}
+}
+
+/*获取一个整数是几位数：如： 256  ---3位数*/
+uint8_t getIntNum(uint16_t len){
+	
+	uint16_t len_temp = len;
+	uint8_t count = 0;
+	while(len_temp != 0)
+	{
+		len_temp /=10;
+		++count;
+	}
+	return count;
 }
 
 
@@ -96,6 +115,51 @@ void HexToStr(uint8_t* hex,char * str,int hexlen)
 			case '=':str[j] = 'D'; break;
 			case '>':str[j] = 'E'; break;
 			case '?':str[j] = 'F'; break;
+			default:break;
+		}
+	}
+	str[2*hexlen] = 0;  //结束符
+}
+
+/*字符串比较，前Len个数据是否相同*/
+uint8_t gSelfStrCmp(const char * str,const char * des,uint16_t len)
+{
+	if(len <= 0){
+		LOG(LOG_ERROR,"str len is wrong.Please check\r\n");
+		return -1;
+	}
+	while(len--){
+		printf("str[%d]:%c\r\n",len,str[len]);
+		printf("des[%d]:%c\r\n",len,des[len]);
+		if(str[len] == des[len]){
+		}else{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+//HEX值转为ASCII型字符
+/*实例：  0x64--"64"*/
+void HexToStrLow(uint8_t* hex,char * str,int hexlen)
+{
+	int i = 0;
+	int j = 0;
+	for (i = 0; i < hexlen; i++)
+	{
+		str[j++] = hex[i] / 16 + '0';
+		str[j++] = hex[i] % 16 + '0';	
+	}
+	for (j = 0; j < 2*hexlen; j++)
+	{
+		switch (str[j])
+		{
+			case ':':str[j] = 'a'; break;
+			case ';':str[j] = 'b'; break;
+			case '<':str[j] = 'c'; break;
+			case '=':str[j] = 'd'; break;
+			case '>':str[j] = 'e'; break;
+			case '?':str[j] = 'f'; break;
 			default:break;
 		}
 	}

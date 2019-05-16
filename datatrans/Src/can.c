@@ -1,42 +1,3 @@
-/**
-  ******************************************************************************
-  * File Name          : CAN.c
-  * Description        : This file provides code for the configuration
-  *                      of the CAN instances.
-  ******************************************************************************
-  ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * COPYRIGHT(c) 2018 STMicroelectronics
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
-
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 #include "usart.h"
@@ -46,6 +7,49 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
+#include "Interactive.h"
+#include "upgrade.h"
+#include "gprs.h"
+#include "message.h"
+
+
+/*请求链接帧*/
+const uint8_t Connect_P[8]={0x02,0x10,0xfa,0xff,0xff,0xff,0xff,0xff};
+const uint8_t Connect_P_OK[8]={0x02,0x50,0xfa,0xff,0xff,0xff,0xff,0xff};
+
+/*请求安全访问帧*/
+const uint8_t SafeConnect_P[8]={0x02,0x27,0xfb,0xff,0xff,0xff,0xff,0xff};
+uint8_t SafeConnect_P_OK[8]={0x04,0x67,0xfb,0x01,0x02,0xff,0xff,0xff};   //3  4 
+
+/*解密帧*/
+/*解密算法： **
+**  收到同意访问帧：SafeConnect_P_OK[8]={0x04,0x67,0xfb,0xH1,0xL1,0xff,0xff,0xff}; 
+**	计算得到0XH2 0XL2    Decrypt_P[8]={0x04,0x27,0xfc,0xH2,0xL1,0xff,0xff,0xff};
+**  计算方法是：  (((0xH1*256+0XL1) XOR 0X4521) + ((0XH1*256+0XL1) AND 0X3421))  AND 0XFFFF
+*/
+uint8_t Decrypt_P[8]={0x04,0x27,0xfc,0x02,0x01,0xff,0xff,0xff};					//3   4
+const uint8_t Decrypt_P_OK[8]={0x03,0x67,0xfc,0x34,0xff,0xff,0xff,0xff};
+const uint8_t Decrypt_P_FAIL[8]={0x03,0x67,0xfc,0x35,0xff,0xff,0xff,0xff};
+
+/*固件更新指令帧*/
+const uint8_t Update_P[8]={0x10,0x01,0x92,0xff,0xff,0xff,0xff,0xff};
+const uint8_t Update_P_OK[8]={0x02,0x7B,0x92,0x00,0x00,0x00,0x00,0x00};
+
+/*行更新指令*/
+const uint8_t LineEnd_P[8] = {0x10,0x01,0xFE,0x00,0x00,0x00,0x00,0x00};
+const uint8_t LineEnd_P_OK[8] = {0x02,0x7B,0x03,0x00,0x00,0x00,0x00,0x00};
+const uint8_t LineEnd_P_FAIL[8] = {0x02,0x7B,0x00,0x00,0x00,0x00,0x00,0x00};
+
+/*固件更新完成*/
+const uint8_t UpdateFinish_P[8]={0x10,0x01,0xfc,0x00,0x00,0x00,0x00,0x00};
+const uint8_t UpdateFinish_P_OK[8]={0x02,0x7B,0x01,0x00,0x00,0x00,0x00,0x00};
+
+/*返回的数据，用于校验CAN返回包是否正确*/
+uint8_t Can_rev_data[9]={0};
+
+SemaphoreHandle_t CANSendStart;					/*发送起始信号量*/
+SemaphoreHandle_t CanRevStatus;					/*等待CAN返回帧*/
+
 
 CAN_ID can_id;
 
@@ -63,14 +67,14 @@ CAN_RecvMsg can_recvmsg2;
 CAN_HandleTypeDef hcan1;
 
 /* CAN1 init function */
-void MX_CAN1_Init(void)
+void MX_CAN1_Init(uint32_t RecID)
 {
 	CAN_FilterTypeDef  sFilterConfig;
 
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 7;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;					//正常工作模式
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;			//500K的通信速率
   hcan1.Init.TimeSeg1 = CAN_BS1_5TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_6TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
@@ -85,15 +89,15 @@ void MX_CAN1_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-	 sFilterConfig.FilterIdHigh         = 0x0000;  
-   sFilterConfig.FilterIdLow          = 0x1314;  
-   sFilterConfig.FilterMaskIdHigh     = 0x0000;			
-   sFilterConfig.FilterMaskIdLow      = 0x0000;			
-   sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;        
-   sFilterConfig.FilterBank=0;
-   sFilterConfig.FilterScale=CAN_FILTERSCALE_32BIT;
-   sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
-   sFilterConfig.FilterActivation = ENABLE;         
+	 sFilterConfig.FilterIdHigh         = (((uint32_t)RecID<<21)&0xffff0000)>>16;  
+	 sFilterConfig.FilterIdLow          = (((uint32_t)RecID<<21)|CAN_ID_STD|CAN_RTR_DATA)& 0xffff;  
+	 sFilterConfig.FilterMaskIdHigh     = 0xFFFF;			
+	 sFilterConfig.FilterMaskIdLow      = 0xFFFF;			
+	 sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;        
+	 sFilterConfig.FilterBank=0;
+	 sFilterConfig.FilterScale=CAN_FILTERSCALE_32BIT;
+	 sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
+	 sFilterConfig.FilterActivation = ENABLE;         
 
    if(HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig)!=HAL_OK)
    {
@@ -166,11 +170,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   if(hcan->Instance==CAN1)
   {
      HAL_CAN_GetRxMessage(hcan,CAN_RX_FIFO0,&RxMessage1,can_recvmsg1.Data);
-			for(int i=0;i<8;i++)
-			{
-				printf("RxMessage1:%x\r\n",can_recvmsg1.Data[i]);
-			
-			}
+		 xSemaphoreGive(CanRevStatus);
+//			for(int i=0;i<8;i++)
+//			{
+//				printf("RxMessage1:%x\r\n",can_recvmsg1.Data[i]);
+//			
+//			}
   }
 	else if(hcan->Instance==CAN2)
 	{
@@ -186,9 +191,10 @@ id_type:标准帧或者扩展帧
 data_type:数据类型  数据帧或者远程帧
 data：待发送的数据
 */
-int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
+
+int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data)
 {
-	if(id_type == 0)		//标准帧
+	if(id_type == CAN_ID_STD)		//标准帧
 	{
 		TxMessage1.StdId = ID;
 		TxMessage1.IDE = CAN_ID_STD;
@@ -198,7 +204,7 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
 		TxMessage1.ExtId = ID;
 		TxMessage1.IDE = CAN_ID_EXT;		
 	}
-	if(data_type == 0 )	//发送的是数据帧
+	if(data_type == CAN_RTR_DATA )	//发送的是数据帧
 		TxMessage1.RTR = CAN_RTR_DATA;
 	else
 		TxMessage1.RTR = CAN_RTR_REMOTE;
@@ -215,7 +221,9 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
 		memcpy(sTR_Buf,(const void *)&data[sCount],8);//读取8个数据
 		if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,sTR_Buf,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
 		{
+			/*此处如果发送失败需要上报发送失败的消息*/
 			LOG(LOG_ERROR,"sending wrong\r\n");
+			gUploadErrorCode(CAN_SEND_ERR);
 		  return 0;
 		}
 		sCount += 8;
@@ -229,6 +237,8 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,uint8_t * data)
 //		LOG(LOG_INFO,"sTR_Buf : %s    sDataLeft: %d\r\n",sTR_Buf,sDataLeft);
 		if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,sTR_Buf,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
 		{
+			/*此处如果发送失败需要上报发送失败的消息*/
+			gUploadErrorCode(CAN_SEND_ERR);
 			LOG(LOG_ERROR,"sending wrong\r\n");
 		 return 0;
 		}		
@@ -256,12 +266,163 @@ void CAN_TRANSMIT1(void)
 }
 /* USER CODE END 1 */
 
-/**
-  * @}
-  */
+/*具体的发送函数*/
+static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec_data)
+{
+	int rc = -1;
+	BaseType_t err;
+	
+	
+	memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
+	gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,send_data);
+	
+	/*发送完数据后，等待数据返回，时间1S*/
+	err = xSemaphoreTake(CanRevStatus,1000);
+	/*等到信号量*/
+	if(err == pdTRUE){
+		/*判断CAN接收到的数据是否和期望值不相同*/
+		if(memcmp(rec_data,can_recvmsg1.Data,8) == 0){
+			rc = Can_Success;
+		}else if(send_data[0] == 0x04){		/*CAN发送解密帧有两种返回*/
+			if(memcmp(Decrypt_P_FAIL,can_recvmsg1.Data,8)){	/*收到解密失败帧*/
+				gUploadErrorCode(CAN_DECRYPT_ERR);
+				LOG(LOG_ERROR,"Decrypt_P_FAIL\r\n");
+				rc = Can_Connect_Failed;
+			}else{		/*既不是解密成功帧  也不是解密失败帧  是错误帧*/
+				gUploadErrorCode(CAN_WRONG_REV_ERR);
+				rc = Can_Rev_Wrong;
+			}
+		}else if(memcmp(LineEnd_P_FAIL,can_recvmsg1.Data,8) == 0){			/*行更新指令同样具有两种返回*/
+			LOG(LOG_ERROR,"LineEnd_P_FAIL\r\n");
+			gUploadErrorCode(CAN_FILE_ERR);
+			rc = Can_File_Wrong;
+		}else{	/*收到其他无意义信息*/
+			gUploadErrorCode(CAN_WRONG_REV_ERR);
+			rc = Can_Rev_Wrong;
+		}
+	}else{	/*没有接收到数据，等待超时，需要上报错误信息*/
+		gUploadErrorCode(CAN_NO_REV_ERR);
+		LOG(LOG_ERROR,"can is not responding.\n");
+		rc = Can_Rev_Wrong;
+	}
+	return rc;
+}
 
-/**
-  * @}
-  */
+
+
+/*CAN数据发送之前的准备函数*/
+static uint8_t CanPre(void)
+{
+	int rc = -1;
+	char H1=0;char L1=0;
+	char H2=0;char L2=0;
+	BaseType_t err;
+	
+	/*初始化对应CAN接口*/
+	/*如果是一号端口*/
+	if(can_id.Can_num == Can_num1){
+		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
+		
+		/*发送请求链接帧*/
+		rc = CANSend(Connect_P,Connect_P_OK);
+		if(rc != Can_Success){
+			rc = CAN_PRE_FAIL;
+			LOG(LOG_ERROR,"CAN SEND is wrong.! Please check!\r\n");
+			return rc;
+		}
+		/*发送请求安全访问帧*/
+		memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
+		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,SafeConnect_P);
+		/*发送完数据后，等待数据返回，时间1S*/
+		err = xSemaphoreTake(CanRevStatus,1000);
+		/*等到信号量*/
+		if(err == pdTRUE){
+			/*判断安全访问帧返回是否正确*/
+			if(can_recvmsg1.Data[0] != 0x04 || can_recvmsg1.Data[2] == 0x67 ||can_recvmsg1.Data[2] == 0xfb){
+				rc = CAN_PRE_FAIL;
+				LOG(LOG_ERROR,"CAN SafeConnect_P is wrong.! Please check!\r\n");
+				return rc;			
+			}
+			H1=can_recvmsg1.Data[3];
+			L1=can_recvmsg1.Data[4];
+			H2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421))>>8)&0xff;
+			L2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421)))&0xff;
+			Decrypt_P[3]=H2;Decrypt_P[4]=L2;
+		}
+		/*发送解密帧*/
+		rc = CANSend(Decrypt_P,Decrypt_P_OK);
+		if(rc != Can_Success){
+				rc = CAN_PRE_FAIL;
+				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
+				return rc;	
+		}
+		/*发送固件更新帧*/
+		rc = CANSend(Update_P,Update_P_OK);
+		if(rc != Can_Success){
+				rc = CAN_PRE_FAIL;
+				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
+				return rc;	
+		}
+		rc = CAN_PRE_OK;
+	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
+		
+		/*发送请求链接帧*/
+		rc = CANSend(Connect_P,Connect_P_OK);
+		if(rc != Can_Success){
+
+		}
+		/*发送请求安全访问帧*/
+		rc = CANSend(SafeConnect_P,SafeConnect_P_OK);
+		if(rc != Can_Success){
+
+		}
+		/*发送解密帧*/
+		rc = CANSend(Decrypt_P,Decrypt_P_OK);
+		if(rc != Can_Success){
+
+		}
+		/*发送固件更新帧*/
+		rc = CANSend(Update_P,Update_P_OK);
+		if(rc != Can_Success){
+
+		}			
+	}
+	return rc;
+}
+
+
+/*CAN数据发送任务*/
+void CANSendTask(void *pArg)   
+{
+	BaseType_t err;
+	/*等待开始发送信号量 --一直等待*/
+	err = xSemaphoreTake(CANSendStart,portMAX_DELAY);
+	/*成功获取到信号量*/
+	if(err == pdTRUE)
+	{
+		
+	}
+	/*获取信号量失败*/
+	else
+	{
+		LOG(LOG_ERROR,"cannot get the start signal");
+	}
+}
+
+#define UPLOAD_ERRORCODE_TO_INTERNET 	"{\"type\":\"updateerr\",\"imei\":\"%s\",\"errcode\":%d}"
+/*从网络获取固件包--上报获取包*/
+void gUploadErrorCode(uint8_t errorType)
+{
+	char * str = pvPortMalloc(200);
+	memset(str,0,200);
+	sprintf(str,UPLOAD_ERRORCODE_TO_INTERNET,gGprs.gimei,errorType);
+	MessageSend(str,1);
+	vPortFree(str);
+	vSemaphoreDelete(ConfigBinarySemaphore);
+}
+
+
+
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

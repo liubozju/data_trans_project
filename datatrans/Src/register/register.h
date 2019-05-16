@@ -17,7 +17,9 @@
 #define PACKSTART "packstart"
 #define PACKEND "packend"
 
+#define REV_DATA "TCPRECV"
 #define CONFIG "config"
+#define CHECKSUM "md5"
 #define CAN_NUM "cannum"
 #define RECID "RecID"
 #define SENDID "SendID"

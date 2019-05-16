@@ -11,12 +11,14 @@
 #include "task.h"
 #include "log.h"
 #include "can.h"
+#include "crc.h"
+#include "md5.h"
 
 /*测试任务创建-等*/
-#define TEST_TASK_PRIO    6          //任务优先级
-#define TEST_STK_SIZE     128        //任务堆栈大小
-TaskHandle_t TESTTaskHanhler;        //任务句柄
-void TESTTask(void *pvParameters);   //任务函数声明
+//#define TEST_TASK_PRIO    6          //任务优先级
+//#define TEST_STK_SIZE     128        //任务堆栈大小
+//TaskHandle_t TESTTaskHanhler;        //任务句柄
+//void TESTTask(void *pvParameters);   //任务函数声明
 
 /*开始任务创建---用于创建工程所需要的定时器  任务等*/
 #define START_TASK_PRIO    6          //任务优先级
@@ -25,7 +27,7 @@ TaskHandle_t StartTaskHanhler;        //任务句柄
 void StartTask(void *pvParameters);   //任务函数声明
 
 /*交互任务定义*/
-#define InteRaction_TASK_PRIO    10                    //任务优先级
+#define InteRaction_TASK_PRIO    4                    //任务优先级
 #define InteRaction_STK_SIZE     256                  //任务堆栈大小
 TaskHandle_t InteRactionTaskHanhler;                  //任务句柄
 
@@ -48,17 +50,20 @@ TaskHandle_t MsgRecTaskHanhler;                  //任务句柄
 #define MsgSendTask_STK_SIZE     512        //任务堆栈大小
 TaskHandle_t MsgSendTaskHanhler;        //任务句柄
 
+
+/*CAN数据发送*/
+#define CANSendTask_TASK_PRIO    4          //任务优先级
+#define CANSendTask_STK_SIZE     512        //任务堆栈大小
+TaskHandle_t CANSendTaskHanhler;        //任务句柄
+
 extern gprs gGprs;
 TimerHandle_t connectTimerHandler;
 xTimerHandle NetTimerHandler;
 
-
-
-
 int main(void)
 {
 	platformInit();
-	
+
 	/*创建开始任务*/
 	xTaskCreate(	(TaskFunction_t) StartTask,				/*任务函数*/
 								(const char *)   "StartTask",			/*任务名称*/
@@ -75,10 +80,10 @@ void StartTask(void *pvParameter)
 {
 	
 	 taskENTER_CRITICAL();     
-	 
 		
 	 MsgInfoConfig();																	/*配置Message 串口接收发送队列*/
-	 gRemoteIpPortConfig("112.124.6.31","6800"); 			/*配置远端IP*/
+	 gRemoteIpPortConfig("47.111.9.209","9090"); 			/*配置远端IP*/
+	//gRemoteIpPortConfig("112.124.6.31","6800"); 			/*配置远端IP*/
 	 gGprs.gGPRSConfig();									/*模组相关信息配置*/
 	 
    InteracEventHandler = xEventGroupCreate();				/*创建交互的事件标志组*/
@@ -144,6 +149,14 @@ void StartTask(void *pvParameter)
 								(UBaseType_t )		Upgrade_TASK_PRIO,/*任务优先级*/
 								(TaskHandle_t* ) &UpgradeTaskHanhler /*任务句柄*/
 									);
+
+//	xTaskCreate(	(TaskFunction_t) CANSendTask,				/*任务函数*/
+//								(const char *)   "Can_send_Task",			/*任务名称*/
+//								(uint16_t		)			CANSendTask_STK_SIZE,	/*任务堆栈*/
+//								(void *)					NULL,						/*任务参数*/
+//								(UBaseType_t )		CANSendTask_TASK_PRIO,/*任务优先级*/
+//								(TaskHandle_t* ) &CANSendTaskHanhler /*任务句柄*/
+//									);
 
 		xTimerStart(connectTimerHandler,portMAX_DELAY);
 //    xTimerStart(CSQTimerHandler,portMAX_DELAY);

@@ -20,6 +20,13 @@ typedef struct MESSAGE{
 	void (*send)(u8 head);								/*·¢ËÍº¯Êý*/
 }Msg;
 
+typedef enum{
+	GETFIRM_STOP = 0,
+	GETFIRM_START,
+}GETFIRM;
+
+
+extern GETFIRM getfirm;
 
 extern int MessageReceiveFromISR(char *msg);
 void MessageReceiveTask(void *pArg);
