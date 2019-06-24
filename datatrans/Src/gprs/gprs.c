@@ -6,12 +6,15 @@
 #include "register.h"
 #include "Interactive.h"
 
+#define HEARTBEAT_PACK 	"{\"type\":\"heartbeat\",\"imei\":\"%s\"}"
+
 extern TaskHandle_t MsgRecTaskHanhler;        /*消息解析任务*/
 extern QueueHandle_t UsartRecMsgQueue;        /*消息接收队列*/
 extern TaskHandle_t MsgSendTaskHanhler;       /*消息封装发送任务*/
 extern TimerHandle_t connectTimerHandler;
 extern xTimerHandle NetTimerHandler;
 
+SemaphoreHandle_t HeartBinarySemaphore;		/*设备注册使用信号量*/
 SemaphoreHandle_t NetBinarySemaphore;					/*联网的信号量*/
 gIPPort	gRemoteIpPor;													/*远端IP定义*/
 
@@ -39,8 +42,8 @@ int gDeviceConnect(void)
 			gGprs.gprsFlag.gRegisterFlag =1;
 			gDeviceRegister();
 			gGprs.gprsFlag.gRegisterFlag =0;
-			//LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
-			//xTimerStart(NetTimerHandler,portMAX_DELAY);	
+			LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
+			xTimerStart(NetTimerHandler,portMAX_DELAY);	
 //		  xTimerStart(testTimerHandler,portMAX_DELAY);
 //			xTimerStart(SearchCardTimerHandler,portMAX_DELAY);
 			return 1;
@@ -396,6 +399,33 @@ int gGetDeviceINFO(const char * cmd,const char *rsp)
 	vTaskSuspendAll();
 	sysReset();
 	return -1;
+}
+
+int HeartBeat(void)
+{
+	char * str = pvPortMalloc(200);
+	memset(str,0,200);
+	sprintf(str,HEARTBEAT_PACK,gGprs.gimei);
+	LOG(LOG_INFO,"str:%s \r\n",str);
+  BaseType_t err;
+  for(int i=0;i<3;i++)
+  {
+		MessageSend(str,1);
+		err = xSemaphoreTake(HeartBinarySemaphore,30000);
+	  if(err == pdTRUE)
+		{
+			vPortFree(str);
+      LOG(LOG_DEBUG,"heartrsp ok\r\n");
+			return 1;
+		}
+		LOG(LOG_ERROR,"register %d times\r\n",i);
+  }
+	vPortFree(str);	
+	LOG(LOG_ERROR,"send heart failed\r\n");
+	LOG(LOG_ERROR,"System Rebooting\r\n");
+	NVIC_SystemReset();
+	return -1;		
+	
 }
 
 

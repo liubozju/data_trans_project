@@ -59,6 +59,7 @@ extern gprs gGprs;
 extern int gDeviceConnect(void);
 extern void gDeviceConfig(void);
 static int pdeviceConnect(void);
+extern int HeartBeat(void);
 
 
 /*自定义函数声明*/

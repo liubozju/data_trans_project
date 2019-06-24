@@ -51,17 +51,33 @@
 #include "iwdg.h"
 
 /* USER CODE BEGIN 0 */
-
+/**
+  * 函数功能: 独立看门狗初始化配置
+  * 输入参数: Tout = prv/40 * Reload (s) prv可以是[4,8,16,32,64,128,256]
+  *            prv:预分频器值，取值如下：
+  *            参数 IWDG_PRESCALER_4: IWDG prescaler set to 4
+  *            参数 IWDG_PRESCALER_8: IWDG prescaler set to 8
+  *            参数 IWDG_PRESCALER_16: IWDG prescaler set to 16
+  *            参数 IWDG_PRESCALER_32: IWDG prescaler set to 32
+  *            参数 IWDG_PRESCALER_64: IWDG prescaler set to 64
+  *            参数 IWDG_PRESCALER_128: IWDG prescaler set to 128
+  *            参数 IWDG_PRESCALER_256: IWDG prescaler set to 256
+  *
+  *            rlv:预分频器值，取值范围为：0-0XFFF
+  * 返 回 值: 无
+  * 说    明：函数调用举例：
+  *           IWDG_Config(IWDG_Prescaler_64 ,625);  // IWDG 1s 超时溢出
+  */
 /* USER CODE END 0 */
 
 IWDG_HandleTypeDef hiwdg;
-
+/*4S的超时时间*/
 /* IWDG init function */
 void MX_IWDG_Init(void)
 {
 
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {

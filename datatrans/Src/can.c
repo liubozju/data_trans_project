@@ -192,7 +192,7 @@ data_type:数据类型  数据帧或者远程帧
 data：待发送的数据
 */
 
-int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data)
+int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data,const uint16_t datalen)
 {
 	if(id_type == CAN_ID_STD)		//标准帧
 	{
@@ -208,11 +208,12 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned c
 		TxMessage1.RTR = CAN_RTR_DATA;
 	else
 		TxMessage1.RTR = CAN_RTR_REMOTE;
-	uint16_t sDataLen = strlen((const char *)data);	//获取数据总长度
+	uint16_t sDataLen = datalen;	//获取数据总长度
 	uint16_t sDataPage = sDataLen / 8 ;							//按照8字节进行划分
 	uint16_t sDataLeft = sDataLen % 8 ;							//剩余的字节数
 	uint16_t sCount = 0;
 	uint8_t  sTR_Buf[9]={0};
+	uint16_t i =0;
 	memset(sTR_Buf,0,9);
 	for(;sDataPage>0 ;sDataPage--)									//数据有8个一组
 	{
@@ -228,7 +229,7 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned c
 		}
 		sCount += 8;
 	}
-	vTaskDelay(20);
+	//vTaskDelay(20);
 	if(sDataLeft > 0)							//不是8对齐的，有剩余数据
 	{
 		TxMessage1.DLC = sDataLeft;
@@ -238,8 +239,8 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned c
 		if(HAL_CAN_AddTxMessage(&hcan1,&TxMessage1,sTR_Buf,(uint32_t*)CAN_TX_MAILBOX0)!=HAL_OK)
 		{
 			/*此处如果发送失败需要上报发送失败的消息*/
-			gUploadErrorCode(CAN_SEND_ERR);
 			LOG(LOG_ERROR,"sending wrong\r\n");
+			gUploadErrorCode(CAN_SEND_ERR);
 		 return 0;
 		}		
 	}
@@ -267,14 +268,13 @@ void CAN_TRANSMIT1(void)
 /* USER CODE END 1 */
 
 /*具体的发送函数*/
-static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec_data)
+static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec_data,const uint16_t datalen)
 {
 	int rc = -1;
 	BaseType_t err;
 	
-	
 	memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
-	gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,send_data);
+	gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,send_data,datalen);
 	
 	/*发送完数据后，等待数据返回，时间1S*/
 	err = xSemaphoreTake(CanRevStatus,1000);
@@ -310,8 +310,153 @@ static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec
 
 
 
+///*CAN数据发送之前的准备函数*/
+//uint8_t CanPre(void)
+//{
+//	int rc = -1;
+//	char H1=0;char L1=0;
+//	char H2=0;char L2=0;
+//	BaseType_t err;
+//	
+//	/*初始化对应CAN接口*/
+//	/*如果是一号端口*/
+//	if(can_id.Can_num == Can_num1){
+//		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
+//		
+//		/*发送请求链接帧*/
+//		rc = CANSend(Connect_P,Connect_P_OK);
+//		if(rc != Can_Success){
+//			rc = CAN_PRE_FAIL;
+//			LOG(LOG_ERROR,"CAN SEND is wrong.! Please check!\r\n");
+//			return rc;
+//		}
+//		/*发送请求安全访问帧*/
+//		memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
+//		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,SafeConnect_P);
+//		/*发送完数据后，等待数据返回，时间1S*/
+//		err = xSemaphoreTake(CanRevStatus,1000);
+//		/*等到信号量*/
+//		if(err == pdTRUE){
+//			/*判断安全访问帧返回是否正确*/
+//			if(can_recvmsg1.Data[0] != 0x04 || can_recvmsg1.Data[2] == 0x67 ||can_recvmsg1.Data[2] == 0xfb){
+//				rc = CAN_PRE_FAIL;
+//				LOG(LOG_ERROR,"CAN SafeConnect_P is wrong.! Please check!\r\n");
+//				return rc;			
+//			}
+//			H1=can_recvmsg1.Data[3];
+//			L1=can_recvmsg1.Data[4];
+//			H2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421))>>8)&0xff;
+//			L2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421)))&0xff;
+//			Decrypt_P[3]=H2;Decrypt_P[4]=L2;
+//		}
+//		/*发送解密帧*/
+//		rc = CANSend(Decrypt_P,Decrypt_P_OK);
+//		if(rc != Can_Success){
+//				rc = CAN_PRE_FAIL;
+//				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
+//				return rc;	
+//		}
+//		/*发送固件更新帧*/
+//		rc = CANSend(Update_P,Update_P_OK);
+//		if(rc != Can_Success){
+//				rc = CAN_PRE_FAIL;
+//				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
+//				return rc;	
+//		}
+//		rc = CAN_PRE_OK;
+//	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+//		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
+//		
+//		/*发送请求链接帧*/
+//		rc = CANSend(Connect_P,Connect_P_OK);
+//		if(rc != Can_Success){
+
+//		}
+//		/*发送请求安全访问帧*/
+//		rc = CANSend(SafeConnect_P,SafeConnect_P_OK);
+//		if(rc != Can_Success){
+
+//		}
+//		/*发送解密帧*/
+//		rc = CANSend(Decrypt_P,Decrypt_P_OK);
+//		if(rc != Can_Success){
+
+//		}
+//		/*发送固件更新帧*/
+//		rc = CANSend(Update_P,Update_P_OK);
+//		if(rc != Can_Success){
+
+//		}			
+//	}
+//	return rc;
+//}
+
+
+///*CAN数据发送之前的准备函数*/
+//uint8_t CanSendLinePack(uint8_t * sLinepack)
+//{
+//	int rc = -1;
+//	BaseType_t err;	
+//	/*如果是一号端口*/
+//	if(can_id.Can_num == Can_num1){	
+
+//		/*发送一行固件包数据*/
+//		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack);
+//		/*发送行结束帧*/
+//		rc = CANSend(LineEnd_P,LineEnd_P_OK);
+//		if(rc != Can_Success){
+//			rc = CAN_PRE_FAIL;
+//			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+//			return rc;
+//		}
+//		rc = CAN_PRE_OK;
+//	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+//		/*发送一行固件包数据*/
+//		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack);
+//		/*发送行结束帧*/
+//		rc = CANSend(LineEnd_P,LineEnd_P_OK);
+//		if(rc != Can_Success){
+//			rc = CAN_PRE_FAIL;
+//			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+//			return rc;
+//		}
+//		rc = CAN_PRE_OK;	
+//	}
+//	return rc;
+//}
+
+///*CAN数据发送之前的准备函数*/
+//uint8_t CanSendEndPack(void)
+//{
+//	int rc = -1;
+//	BaseType_t err;	
+//	/*如果是一号端口*/
+//	if(can_id.Can_num == Can_num1){	
+
+//		/*发送固件结束帧*/
+//		rc = CANSend(UpdateFinish_P,UpdateFinish_P_OK);
+//		if(rc != Can_Success){
+//			rc = CAN_PRE_FAIL;
+//			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+//			return rc;
+//		}
+//		rc = CAN_PRE_OK;
+//	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+//		/*发送固件结束帧*/
+//		rc = CANSend(UpdateFinish_P,UpdateFinish_P_OK);
+//		if(rc != Can_Success){
+//			rc = CAN_PRE_FAIL;
+//			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+//			return rc;
+//		}
+//		rc = CAN_PRE_OK;	
+//	}
+//	return rc;
+//}
+
+
 /*CAN数据发送之前的准备函数*/
-static uint8_t CanPre(void)
+uint8_t CanPre(void)
 {
 	int rc = -1;
 	char H1=0;char L1=0;
@@ -324,41 +469,26 @@ static uint8_t CanPre(void)
 		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
 		
 		/*发送请求链接帧*/
-		rc = CANSend(Connect_P,Connect_P_OK);
-		if(rc != Can_Success){
+		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,Connect_P,sizeof(Connect_P));
+		if(rc != 1){
 			rc = CAN_PRE_FAIL;
 			LOG(LOG_ERROR,"CAN SEND is wrong.! Please check!\r\n");
 			return rc;
 		}
 		/*发送请求安全访问帧*/
 		memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
-		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,SafeConnect_P);
+		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,SafeConnect_P,sizeof(SafeConnect_P));
 		/*发送完数据后，等待数据返回，时间1S*/
-		err = xSemaphoreTake(CanRevStatus,1000);
-		/*等到信号量*/
-		if(err == pdTRUE){
-			/*判断安全访问帧返回是否正确*/
-			if(can_recvmsg1.Data[0] != 0x04 || can_recvmsg1.Data[2] == 0x67 ||can_recvmsg1.Data[2] == 0xfb){
-				rc = CAN_PRE_FAIL;
-				LOG(LOG_ERROR,"CAN SafeConnect_P is wrong.! Please check!\r\n");
-				return rc;			
-			}
-			H1=can_recvmsg1.Data[3];
-			L1=can_recvmsg1.Data[4];
-			H2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421))>>8)&0xff;
-			L2=((((H1*256+L1)^0x4521) + ((H1*256+L1)&0x3421)))&0xff;
-			Decrypt_P[3]=H2;Decrypt_P[4]=L2;
-		}
 		/*发送解密帧*/
-		rc = CANSend(Decrypt_P,Decrypt_P_OK);
-		if(rc != Can_Success){
+		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,Decrypt_P,sizeof(Decrypt_P));
+		if(rc != 1){
 				rc = CAN_PRE_FAIL;
 				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
 				return rc;	
 		}
 		/*发送固件更新帧*/
-		rc = CANSend(Update_P,Update_P_OK);
-		if(rc != Can_Success){
+		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,Update_P,sizeof(Update_P));
+		if(rc != 1){
 				rc = CAN_PRE_FAIL;
 				LOG(LOG_ERROR,"CAN Decrypt_P is wrong.! Please check!\r\n");
 				return rc;	
@@ -368,28 +498,93 @@ static uint8_t CanPre(void)
 		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
 		
 		/*发送请求链接帧*/
-		rc = CANSend(Connect_P,Connect_P_OK);
+		rc = CANSend(Connect_P,Connect_P_OK,sizeof(Connect_P));
 		if(rc != Can_Success){
 
 		}
 		/*发送请求安全访问帧*/
-		rc = CANSend(SafeConnect_P,SafeConnect_P_OK);
+		rc = CANSend(SafeConnect_P,SafeConnect_P_OK,sizeof(SafeConnect_P));
 		if(rc != Can_Success){
 
 		}
 		/*发送解密帧*/
-		rc = CANSend(Decrypt_P,Decrypt_P_OK);
+		rc = CANSend(Decrypt_P,Decrypt_P_OK,sizeof(Decrypt_P));
 		if(rc != Can_Success){
 
 		}
 		/*发送固件更新帧*/
-		rc = CANSend(Update_P,Update_P_OK);
+		rc = CANSend(Update_P,Update_P_OK,sizeof(Update_P));
 		if(rc != Can_Success){
 
 		}			
 	}
 	return rc;
 }
+
+
+/*CAN数据发送之前的准备函数*/
+uint8_t CanSendLinePack(uint8_t * sLinepack)
+{
+	int rc = -1;
+	BaseType_t err;	
+	/*如果是一号端口*/
+	if(can_id.Can_num == Can_num1){	
+
+		/*发送一行固件包数据*/
+		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack,strlen((const char *)sLinepack));
+		/*发送行结束帧*/
+		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,LineEnd_P,sizeof(LineEnd_P));
+		if(rc != 1){
+			rc = CAN_PRE_FAIL;
+			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			return rc;
+		}
+		rc = CAN_PRE_OK;
+	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+		/*发送一行固件包数据*/
+		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack,strlen((const char *)sLinepack));
+		/*发送行结束帧*/
+		rc = CANSend(LineEnd_P,LineEnd_P_OK,sizeof(LineEnd_P));
+		if(rc != Can_Success){
+			rc = CAN_PRE_FAIL;
+			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			return rc;
+		}
+		rc = CAN_PRE_OK;	
+	}
+	return rc;
+}
+
+/*CAN数据发送之前的准备函数*/
+uint8_t CanSendEndPack(void)
+{
+	int rc = -1;
+	BaseType_t err;	
+	/*如果是一号端口*/
+	if(can_id.Can_num == Can_num1){	
+
+		/*发送固件结束帧*/
+		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,UpdateFinish_P,sizeof(UpdateFinish_P));
+		if(rc != 1){
+			rc = CAN_PRE_FAIL;
+			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			return rc;
+		}
+		rc = CAN_PRE_OK;
+	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
+		/*发送固件结束帧*/
+		rc = CANSend(UpdateFinish_P,UpdateFinish_P_OK,sizeof(UpdateFinish_P));
+		if(rc != Can_Success){
+			rc = CAN_PRE_FAIL;
+			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			return rc;
+		}
+		rc = CAN_PRE_OK;	
+	}
+	return rc;
+}
+
+
 
 
 /*CAN数据发送任务*/
@@ -414,12 +609,13 @@ void CANSendTask(void *pArg)
 /*从网络获取固件包--上报获取包*/
 void gUploadErrorCode(uint8_t errorType)
 {
+	/*非联网状态下不上报*/
 	char * str = pvPortMalloc(200);
 	memset(str,0,200);
 	sprintf(str,UPLOAD_ERRORCODE_TO_INTERNET,gGprs.gimei,errorType);
 	MessageSend(str,1);
 	vPortFree(str);
-	vSemaphoreDelete(ConfigBinarySemaphore);
+	//vSemaphoreDelete(ConfigBinarySemaphore);
 }
 
 

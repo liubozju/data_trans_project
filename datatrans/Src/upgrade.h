@@ -24,9 +24,27 @@ typedef enum{
 }Method;
 
 typedef enum{
-	sametime = 0x01,
-	diff,
+	upgradeOK = 0x00,
+	upgradeFAIL,
+	downloadOK,
+	downloadFAIL,
+}upgrade_result;
+
+typedef enum{
+	endline = 0x01,
+	middleline,
+}s19_end;
+
+typedef enum{
+	sametime = 66,
+	diff = 23,
 }Measure;
+
+typedef struct{
+	uint8_t type[2];
+	uint8_t msg_len[2];
+	uint8_t data[80];				//地址域+数据域+校验和  最大长度为38个字节，76个字符，为避免少读，多读几个字节		
+}s19_msg;
 
 
 typedef struct{
@@ -37,7 +55,7 @@ typedef struct{
 	uint16_t Req_Pack;					/*当前请求包*/
 	uint16_t Rev_Pack;					/*平台当前下发的固件包号码*/
 	uint32_t Rec_Data_Len;			/*用于存储接收到的数据包总长度--按照字节单位进行计数*/
-	uint8_t LinePack[200];			/*用于存储每行的数据包*/
+	uint8_t LinePack[100];			/*用于存储每行的数据包*/
 	char md5[35];						/*用于存储接收到的md5校验数据包*/
 }Upgrade_info;
 

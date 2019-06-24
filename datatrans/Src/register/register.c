@@ -5,6 +5,7 @@
 #include <string.h>
 
 extern gprs gGprs;
+extern xTimerHandle NetTimerHandler;
 SemaphoreHandle_t RigisterBinarySemaphore;		/*设备注册使用信号量*/
 
 #define DEVICE_REGISTER_PACK 	"{\"type\":\"register\",\"imsi\":\"%s\",\"imei\":\"%s\",\"csq\":\"%d\"}"
@@ -37,6 +38,7 @@ int gDeviceRegister(void)
 			vPortFree(str);
 			vSemaphoreDelete(RigisterBinarySemaphore);
       LOG(LOG_DEBUG,"register ok\r\n");
+			//xTimerStart(NetTimerHandler,portMAX_DELAY);
 			return 1;
 		}
 		LOG(LOG_ERROR,"register %d times\r\n",i);

@@ -59,3 +59,5 @@ datatrans\upgrade.o: ..\Src\gprs\gprs.h
 datatrans\upgrade.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 datatrans\upgrade.o: ..\Src\message\message.h
 datatrans\upgrade.o: ..\Src\flash\myflash.h
+datatrans\upgrade.o: ..\Src\conversion.h
+datatrans\upgrade.o: ../Inc/can.h

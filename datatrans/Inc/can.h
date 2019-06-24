@@ -104,12 +104,15 @@ void MX_CAN1_Init(uint32_t RecID);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_TRANSMIT1(void);
-int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data);
+int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data,const uint16_t datalen);
 /* USER CODE END Prototypes */
 
 
 extern void CANSendTask(void *pArg);
+extern uint8_t CanSendEndPack(void);
 extern void gUploadErrorCode(uint8_t errorType);
+extern uint8_t CanPre(void);
+extern uint8_t CanSendLinePack(uint8_t * sLinepack);
 
 #ifdef __cplusplus
 }

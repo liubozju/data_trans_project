@@ -13,13 +13,14 @@
 #include "timers.h"
 
 #define REGISTER_REP  "regrepok"
+#define HEART_REP  "heartrsp"
 #define PBREADY "PBREADY"
 #define PACKSTART "packstart"
 #define PACKEND "packend"
 
 #define REV_DATA "TCPRECV"
 #define CONFIG "config"
-#define CHECKSUM "md5"
+#define CHECKSUM "check"
 #define CAN_NUM "cannum"
 #define RECID "RecID"
 #define SENDID "SendID"

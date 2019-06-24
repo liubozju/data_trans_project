@@ -12,6 +12,11 @@
 #include "task.h"
 
 
+typedef enum{
+	SD_BUTTON_ON = 0,
+	SD_BUTTON_OFF,
+}sdbutton_status;
+
 extern EventGroupHandle_t InteracEventHandler;
 
 /*事件标志位*/
@@ -42,8 +47,8 @@ extern EventGroupHandle_t InteracEventHandler;
 
 
 /*交互接口的引脚定义功能*/
-#define USER_BUTTON1_Pin GPIO_PIN_4
-#define USER_BUTTON2_Pin GPIO_PIN_5
+#define SD_BUTTON GPIO_PIN_4
+#define START_UPGRADE_BUTTON GPIO_PIN_5
 #define USER_BUTTON3_Pin GPIO_PIN_6
 #define USER_BUTTON4_Pin GPIO_PIN_7
 #define USER_BUTTON_GPIO_Port GPIOA
@@ -53,8 +58,8 @@ extern EventGroupHandle_t InteracEventHandler;
 #define Net_LED_GPIO_Port GPIOC
 #define Net_Led_Flick_Pin GPIO_PIN_5
 #define Net_Led_Flick_GPIO_Port GPIOC
-#define Can_Data_Led_Pin GPIO_PIN_0
-#define Can_Data_Led_GPIO_Port GPIOB
+#define Down_OK_Led_Pin GPIO_PIN_0
+#define Down_OK_Led_GPIO_Port GPIOB
 #define Job_OK_Led_Pin GPIO_PIN_1
 #define Job_OK_Led_GPIO_Port GPIOB
 

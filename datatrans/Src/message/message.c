@@ -15,6 +15,7 @@ static QueueHandle_t UsartSenMsgQueue;   //发送信息队列句柄
 SemaphoreHandle_t DeviceSendSemaphore;		//接收到  '>'
 extern gprs gGprs;
 extern SemaphoreHandle_t NetBinarySemaphore;
+extern SemaphoreHandle_t HeartBinarySemaphore;
 extern SemaphoreHandle_t RigisterBinarySemaphore;
 extern gPack_Data gpack_data;
 
@@ -30,6 +31,8 @@ int MessageReceiveFromISR(char *msg)
 			err = xQueueSendFromISR(UsartRecMsgQueue,msg,&xHighPriorityTaskWoken);
 			if(err!=pdTRUE)
 			{
+				printf("data rev :%d\r\n",gpack_data.Pack_Data_len);
+				LOG(LOG_INFO,"MSG OUT:%s\r\n",msg);
 				LOG(LOG_ERROR,"usart idel add queue failed\r\n");
 			}
 			portYIELD_FROM_ISR(xHighPriorityTaskWoken);
@@ -176,8 +179,12 @@ static uint8_t sMd5Check(void){
 	memset(decrypt,0,16);memset(decrypt_str,0,35);
 	MD5_CTX md5;
 	MD5Init(&md5);
-	LOG(LOG_INFO,"gpack_data.Pack_Data ： %s\r\n",gpack_data.Pack_Data);
-	LOG(LOG_INFO,"gpack_data.Pack_Data_len ： %d\r\n",gpack_data.Pack_Data_len);
+//	LOG(LOG_INFO,"gpack_data.Pack_Data ： \r\n");
+//	for(uint32_t i = 0;i<gpack_data.Pack_Data_len;i++)
+//	{
+//		printf("%c",gpack_data.Pack_Data[i]);
+//	}
+	LOG(LOG_INFO,"\r\ngpack_data.Pack_Data_len ： %d\r\n",gpack_data.Pack_Data_len);
 	MD5Update(&md5,gpack_data.Pack_Data,gpack_data.Pack_Data_len);
 	MD5Final(&md5,decrypt);        
 	HexToStrLow(decrypt,decrypt_str,16);
@@ -194,14 +201,29 @@ static uint8_t sMd5Check(void){
 /**解析平台下发的配置包*/
 static void sCheckAnalyze(char * msg)
 {
-	char * str = pvPortMalloc(600);
-	memset(str,0,600);
+	char * str = pvPortMalloc(2048);
+	memset(str,0,2048);
 	volatile char * msg_start=NULL;
 	volatile char * msg_end=NULL;
+  char * msg_tcp_rev = NULL;
+	uint16_t sPackData_len = 0;
+	uint16_t buf_len = sGetbufLen(msg);			/*获取接收到的字符数量*/
+	uint8_t len_count = getIntNum(buf_len);					/*获取buf_len整数位数*/
 	if(NULL != strstr(msg,LEFT_JSON) && NULL != strstr(msg,RIGHT_JSON))
 	{
 		msg_start=strstr(msg,LEFT_JSON);			/*获取配置JSON信息*/
 		msg_end = strstr(msg,RIGHT_JSON);
+		if(*(msg_start-1)!= ',')							/*说明发生了粘包现象*/
+		{
+			msg_tcp_rev = strstr(msg,REV_DATA);
+			sPackData_len = msg_start - (msg_tcp_rev+11+len_count+1);
+			if(gpack_data.Pack_Data_len > 50*1024)	/*如果一包数据过长*/
+			{
+				LOG(LOG_ERROR,"one pack is too long,longer than 50*1024\r\n");
+			}
+			memcpy(gpack_data.Pack_Data+gpack_data.Pack_Data_len,msg_tcp_rev+11+len_count+1,sPackData_len);
+			gpack_data.Pack_Data_len+=sPackData_len;
+		}
 		uint8_t len = msg_end - msg_start;
 		for(int i =0;i<len+1;i++)
 		{
@@ -258,7 +280,7 @@ void MessageReceiveTask(void *pArg)   //命令解析任务
 			/*释放信号量*/
 			xSemaphoreGive(ConfigBinarySemaphore);
 		}
-		if(getfirm == GETFIRM_START && buf_len != 0 && NULL != strstr(buf,REV_DATA))												/*接收到升级包*/
+		if(getfirm == GETFIRM_START && buf_len != 0 && NULL != strstr(buf,REV_DATA) && NULL ==strstr(buf,"OK"))												/*接收到升级包*/
 		{
 			sAnalyzePack(buf);
 			buf_len = 0;
@@ -320,15 +342,15 @@ void MessageReceiveTask(void *pArg)   //命令解析任务
 				 }
 			}
 			buf_len = 0;
-	  }
-//		if(CSQBinarySemaphore!=NULL)                          /*CSQ回复*/
-//		{  
-//			 if(NULL != strstr(buf,CSQ_REP))
-//		   {
-//				 if(CSQBinarySemaphore!=NULL)
-//		     xSemaphoreGive(CSQBinarySemaphore);
-//			 }
-//		}		
+	  } 
+		if(NULL != strstr(buf,HEART_REP))
+		 {
+			 if(HeartBinarySemaphore!=NULL)
+			 {
+				 buf_len = 0;
+				 xSemaphoreGive(HeartBinarySemaphore);
+			 }
+		 }	
 		if(NULL != strstr(buf,"OK"))
 		{
 		   xSemaphoreGive(Message.OKBinarySemaphore);
@@ -394,6 +416,7 @@ void MsgInfoConfig(void)
 {
 	GettingPackBinarySemaphore= xSemaphoreCreateBinary();
 	DeviceSendSemaphore = xSemaphoreCreateBinary();
+	HeartBinarySemaphore = xSemaphoreCreateBinary();
 	ConfigBinarySemaphore = xSemaphoreCreateBinary();
 	UsartRecMsgQueue = xQueueCreate(4,2500);		/*接收队列--4*2048  因为接收数据要尽量长才可以接收文件*/
 	UsartSenMsgQueue = xQueueCreate(8,200);			/*发送队列--8*200   发送数据数据量少，队列大小可以小一点*/   
