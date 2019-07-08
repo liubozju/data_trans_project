@@ -66,3 +66,4 @@ datatrans\message.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis
 datatrans\message.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
 datatrans\message.o: ../Inc/gpio.h
 datatrans\message.o: ..\Src\md5.h
+datatrans\message.o: ../Inc/iwdg.h

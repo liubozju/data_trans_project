@@ -1,9 +1,9 @@
 datatrans\interactive.o: ..\Src\Interactive.c
-datatrans\interactive.o: ..\Src\inc\Interactive.h
-datatrans\interactive.o: ../Inc/main.h
+datatrans\interactive.o: ../Inc/iwdg.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
 datatrans\interactive.o: ../Inc/stm32f4xx_hal_conf.h
 datatrans\interactive.o: ../Inc/main.h
+datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h
 datatrans\interactive.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h
@@ -15,7 +15,6 @@ datatrans\interactive.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
 datatrans\interactive.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
 datatrans\interactive.o: ../Drivers/CMSIS/Include/mpu_armv7.h
 datatrans\interactive.o: ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h
-datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h
 datatrans\interactive.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc_ex.h
@@ -38,6 +37,7 @@ datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_sdmmc.
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 datatrans\interactive.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+datatrans\interactive.o: ..\Src\inc\Interactive.h
 datatrans\interactive.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\interactive.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 datatrans\interactive.o: ../Inc/FreeRTOSConfig.h

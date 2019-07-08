@@ -7,6 +7,7 @@
 #include "button.h"
 #include "usart.h"
 #include "string.h"
+#include "stdio.h"
 
 /*******************************************************************
  *                          变量声明                               
@@ -54,7 +55,7 @@ void Button_Create(const char *name,
   btn->Button_Last_Level = btn->Read_Button_Level(); //按键当前电平
   btn->Debounce_Time = 0;
   
-  printf("button create success!");
+  printf("button create success!\r\n");
   
   Add_Button(btn);          //创建的时候添加到单链表中
   
@@ -320,7 +321,7 @@ void Search_Button(void)
   struct button* pass_btn;
   for(pass_btn = Head_Button; pass_btn != NULL; pass_btn = pass_btn->Next)
   {
-    printf("button node have %s",pass_btn->Name);
+    printf("button node have %s\r\n",pass_btn->Name);
   }
 }
 
@@ -358,12 +359,12 @@ static char *StrnCopy(char *dst, const char *src, uint32_t n)
 static void Print_Btn_Info(Button_t* btn)
 {
   
-  printf("button struct information:\n\
-              btn->Name:%s \n\
-              btn->Button_State:%d \n\
-              btn->Button_Trigger_Event:%d \n\
-              btn->Button_Trigger_Level:%d \n\
-              btn->Button_Last_Level:%d \n\
+  printf("button struct information:\r\n\
+              btn->Name:%s \r\n\
+              btn->Button_State:%d \r\n\
+              btn->Button_Trigger_Event:%d \r\n\
+              btn->Button_Trigger_Level:%d \r\n\
+              btn->Button_Last_Level:%d \r\n\
               ",
               btn->Name,
               btn->Button_State,

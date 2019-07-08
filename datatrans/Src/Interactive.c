@@ -1,4 +1,4 @@
-
+#include "iwdg.h"
 #include "Interactive.h"
 #include "button.h"
 #include  "myflag.h"
@@ -163,6 +163,7 @@ void InteRactionTask(void *pArg)
     EventBits_t sGetEventBit ;
     while(1){
         if(InteracEventHandler != NULL){
+						HAL_IWDG_Refresh(&hiwdg);
 						/*获取事件标志组*/
             sGetEventBit = xEventGroupGetBits(InteracEventHandler);
 						/*NET 状态LED展示*/

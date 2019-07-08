@@ -4,6 +4,7 @@
 #include "message.h"
 #include <string.h>
 #include "Interactive.h"
+#include "iwdg.h"
 
 extern gprs gGprs;
 extern xTimerHandle NetTimerHandler;
@@ -16,10 +17,11 @@ int gDeviceRegister(void)
 {
 	memset((void *)gGprs.gimei,0,20);
 	memset((void *)gGprs.gimsi,0,20);
+	HAL_IWDG_Refresh(&hiwdg);
 	gGprs.gGetGprsInfo("AT+CSQ\r\n","+CSQ: ");						/*获取信号强度*/
 	gGprs.gGetGprsInfo("AT+CGSN\r\n","+CGSN: \"");				/*获取IMEI*/
 	gGprs.gGetGprsInfo("AT+CIMI\r\n","460");							/*获取IMSI*/
-		
+	HAL_IWDG_Refresh(&hiwdg);	
 	taskENTER_CRITICAL();
 	RigisterBinarySemaphore = xSemaphoreCreateBinary();
 	
@@ -32,6 +34,7 @@ int gDeviceRegister(void)
   BaseType_t err;
   for(int i=0;i<3;i++)
   {
+		HAL_IWDG_Refresh(&hiwdg);
 		MessageSend(str,1);
 		err = xSemaphoreTake(RigisterBinarySemaphore,10000);
 	  if(err == pdTRUE)

@@ -603,11 +603,9 @@ uint8_t CanPre(void)
 	/*初始化对应CAN接口*/
 	/*如果是一号端口*/
 	if(can_id.Can_num == Can_num1){
-		//MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
-		
+		MX_CAN1_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
 		/*发送请求链接帧*/
-		LOG(LOG_INFO,"start sending Connect_P\r\n");
-		
+		Log(LOG_INFO,"start sending Connect_P\r\n");
 		rc = CANSend(Connect_P,Connect_P_OK,sizeof(Connect_P));
 		if(rc != Can_Success){
 			rc = CAN_PRE_FAIL;
@@ -649,10 +647,9 @@ uint8_t CanPre(void)
 		}
 		rc = CAN_PRE_OK;
 	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
-		//MX_CAN2_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
-		
+		MX_CAN2_Init(can_id.RecID);	/*指定接收ID初始化对应端口*/
 		/*发送请求链接帧*/
-		LOG(LOG_INFO,"start sending Connect_P\r\n");
+		Log(LOG_INFO,"start sending Connect_P\r\n");
 		
 		rc = CAN2Send(Connect_P,Connect_P_OK,sizeof(Connect_P));
 		if(rc != Can_Success){
@@ -780,10 +777,10 @@ uint8_t CanSendLinePack(uint8_t * sLinepack)
 		/*发送一行固件包数据*/
 		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack,strlen((const char *)sLinepack));
 		/*发送行结束帧*/
-		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,LineEnd_P,sizeof(LineEnd_P));
-		if(rc != 1){
+		rc = CANSend(LineEnd_P,LineEnd_P_OK,sizeof(LineEnd_P));
+		if(rc != Can_Success){
 			rc = CAN_PRE_FAIL;
-			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			LOG(LOG_ERROR,"CanSendLinePack is wrong.! Please check!\r\n");
 			return rc;
 		}
 		rc = CAN_PRE_OK;
@@ -791,10 +788,10 @@ uint8_t CanSendLinePack(uint8_t * sLinepack)
 		/*发送一行固件包数据*/
 		gCAN2_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,sLinepack,strlen((const char *)sLinepack));
 		/*发送行结束帧*/
-		rc = gCAN2_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,LineEnd_P,sizeof(LineEnd_P));
-		if(rc != 1){
+		rc = CAN2Send(LineEnd_P,LineEnd_P_OK,sizeof(LineEnd_P));
+		if(rc != Can_Success){
 			rc = CAN_PRE_FAIL;
-			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			LOG(LOG_ERROR,"CanSendLinePack is wrong.! Please check!\r\n");
 			return rc;
 		}
 		rc = CAN_PRE_OK;
@@ -811,19 +808,19 @@ uint8_t CanSendEndPack(void)
 	if(can_id.Can_num == Can_num1){	
 
 		/*发送固件结束帧*/
-		rc = gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,UpdateFinish_P,sizeof(UpdateFinish_P));
-		if(rc != 1){
+		rc = CANSend(UpdateFinish_P,UpdateFinish_P_OK,sizeof(UpdateFinish_P));
+		if(rc != Can_Success){
 			rc = CAN_PRE_FAIL;
-			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			LOG(LOG_ERROR,"CanSendLinePack is wrong.! Please check!\r\n");
 			return rc;
 		}
 		rc = CAN_PRE_OK;
 	}else if(can_id.Can_num == Can_num2){	/*2号CAN端口*/
 		/*发送固件结束帧*/
-		rc = gCAN2_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,UpdateFinish_P,sizeof(UpdateFinish_P));
-		if(rc != 1){
+		rc = CAN2Send(UpdateFinish_P,UpdateFinish_P_OK,sizeof(UpdateFinish_P));
+		if(rc != Can_Success){
 			rc = CAN_PRE_FAIL;
-			LOG(LOG_ERROR,"CAN send line end  is wrong.! Please check!\r\n");
+			LOG(LOG_ERROR,"CanSendLinePack is wrong.! Please check!\r\n");
 			return rc;
 		}
 		rc = CAN_PRE_OK;	
@@ -831,26 +828,6 @@ uint8_t CanSendEndPack(void)
 	return rc;
 }
 
-
-
-
-/*CAN数据发送任务*/
-void CANSendTask(void *pArg)   
-{
-	BaseType_t err;
-	/*等待开始发送信号量 --一直等待*/
-	err = xSemaphoreTake(CANSendStart,portMAX_DELAY);
-	/*成功获取到信号量*/
-	if(err == pdTRUE)
-	{
-		
-	}
-	/*获取信号量失败*/
-	else
-	{
-		LOG(LOG_ERROR,"cannot get the start signal");
-	}
-}
 
 #define UPLOAD_ERRORCODE_TO_INTERNET 	"{\"type\":\"updatefail\",\"imei\":\"%s\",\"code\":%d}"
 /*从网络获取固件包--上报获取包*/

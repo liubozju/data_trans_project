@@ -6,6 +6,7 @@
 #include "register.h"
 #include "Interactive.h"
 #include "upgrade.h"
+#include "iwdg.h"
 
 #define HEARTBEAT_PACK 	"{\"type\":\"heartbeat\",\"imei\":\"%s\"}"
 
@@ -44,11 +45,14 @@ int gDeviceConnect(void)
 			gGprs.gprsFlag.gGPRSConnectFlag = 0;
 			if(gFlag.ModeFlag == NET_MODE_FLAG)
 			{
+				HAL_IWDG_Refresh(&hiwdg);
 				gGprs.gprsFlag.gRegisterFlag =1;
 				gDeviceRegister();
+				HAL_IWDG_Refresh(&hiwdg);
 				gGprs.gprsFlag.gRegisterFlag =0;
 				gNetConnectFlag = NetConnected;
 				LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
+				HAL_IWDG_Refresh(&hiwdg);
 				xTimerStart(NetTimerHandler,portMAX_DELAY);					
 			}
 			return 1;
@@ -81,6 +85,7 @@ static int sSendRspData(const char *cmd,const char * rsp)
 			count++;
 			if(gGprs.GprsConnectBinarySemaphore!=NULL)
 			{
+					HAL_IWDG_Refresh(&hiwdg);
 			    err = xSemaphoreTake(gGprs.GprsConnectBinarySemaphore,5000);
 					if(err == pdTRUE)
 					{
@@ -142,7 +147,9 @@ static int pdeviceConnect(void)
 	LOG(LOG_TRACE,"Signal Strangth Testing\r\n");
 	HAL_Delay(2000);
 	sSendRspData("AT\r\n","OK");
+	HAL_IWDG_Refresh(&hiwdg);
 	HAL_Delay(3000);
+	HAL_IWDG_Refresh(&hiwdg);
 	sSendRspData("ATE0\r\n","OK");
 	sSendRspData("AT+COPS?\r\n","OK");
 	sSendRspData("AT+IPR=460800\r\n","OK");
@@ -153,7 +160,8 @@ static int pdeviceConnect(void)
 	if(gFlag.ModeFlag == NET_MODE_FLAG)
 	{
 		sSignalJudge();										//在此处加上信号强度的判断		
-	}	
+	}
+	HAL_IWDG_Refresh(&hiwdg);
 	sSendRspData("AT+CGDCONT=1,\"IP\",\"CMNET\"\r\n","OK");
 	sSendRspData("AT+XIIC=1\r\n","OK");
 	HAL_Delay(1000);
@@ -273,6 +281,7 @@ int gNetTest(void)
 	strcat(sNetCheckCmd,"\r\n");
   for(int i=0;i<3;i++)
   {
+		HAL_IWDG_Refresh(&hiwdg);
 		MessageSend(sNetCheckCmd,0);
 		err = xSemaphoreTake(NetBinarySemaphore,10000);
 	  if(err == pdTRUE)
@@ -351,6 +360,7 @@ static int sGetDeviceINFO(const char *cmd,const char *rsp)
 			count++;
 			if(gGprs.GprsINFOBinarySemaphore!=NULL)
 			{
+					HAL_IWDG_Refresh(&hiwdg);
 			    err = xSemaphoreTake(gGprs.GprsINFOBinarySemaphore,5000);		/*收到返回时会发送信号量*/
 					if(err == pdTRUE)
 					{
@@ -397,6 +407,7 @@ int gGetDeviceINFO(const char * cmd,const char *rsp)
   gGprs.gprsFlag.gINFOFlag = 1;			/*置位CSQ标记，用于串口命令解析*/
 	for(int i=0;i<5;i++)
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		if(sGetDeviceINFO(cmd,rsp)>0)
 		{
 			gGprs.gprsFlag.gINFOFlag = 0;
@@ -419,6 +430,7 @@ int HeartBeat(void)
   BaseType_t err;
   for(int i=0;i<3;i++)
   {
+		HAL_IWDG_Refresh(&hiwdg);
 		memset(str,0,200);
 		sprintf(str,HEARTBEAT_PACK,gGprs.gimei);
 		MessageSend(str,1);

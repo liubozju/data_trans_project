@@ -62,3 +62,4 @@ datatrans\gprs.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_group
 datatrans\gprs.o: ../Inc/gpio.h
 datatrans\gprs.o: ..\Src\upgrade.h
 datatrans\gprs.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
+datatrans\gprs.o: ../Inc/iwdg.h

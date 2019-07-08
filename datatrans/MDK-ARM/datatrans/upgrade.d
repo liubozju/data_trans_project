@@ -79,3 +79,4 @@ datatrans\upgrade.o: ../Inc/sd_diskio.h
 datatrans\upgrade.o: ../Inc/sdio.h
 datatrans\upgrade.o: ..\Src\cjson\cjson.h
 datatrans\upgrade.o: ..\Src\flag\myflag.h
+datatrans\upgrade.o: ../Inc/iwdg.h

@@ -71,13 +71,13 @@
 /* USER CODE END 0 */
 
 IWDG_HandleTypeDef hiwdg;
-/*4S的超时时间*/
+/*超时时间: 128/40*4095=15秒钟左右（时钟会有偏差）*/
 /* IWDG init function */
 void MX_IWDG_Init(void)
 {
 
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {

@@ -11,6 +11,7 @@
 #include "stdio.h"
 #include "cjson.h"
 #include "myflag.h"
+#include "iwdg.h"
 
 gFlag_Data gFlag;
 Upgrade_info upgrade_info;
@@ -47,6 +48,7 @@ const char sdownloadFAIL[15]="downloadfail\0";
 /*升级回复完成包*/
 static void upgrade_reply(const char * result_str)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	char * str = pvPortMalloc(200);
 	memset(str,0,200);
 	sprintf(str,UPGRADE_REPLY_PACK,result_str,gGprs.gimei);
@@ -58,6 +60,7 @@ static void upgrade_reply(const char * result_str)
 /*回复CONFIG包*/
 static uint8_t sConfig_reply(void)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	char * str = pvPortMalloc(100);
 	memset(str,0,100);
 	sprintf(str,CONFIG_REPLY_PACK,gGprs.gimei);
@@ -72,6 +75,7 @@ static char getPacStr[100] = {0};
 /*从网络获取固件包--上报获取包*/
 void getPackFromInternet(const uint8_t packnum)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	memset(getPacStr,0,100);
 	sprintf(getPacStr,GET_PACK_FROM_INTERNET,gGprs.gimei,packnum);
 	LOG(LOG_INFO,"str:%s \r\n",getPacStr);	
@@ -83,11 +87,13 @@ void getPackFromInternet(const uint8_t packnum)
 /*获取固件包并写入FLASH当中去*/
 static void gGetPackToFlash(void)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	BaseType_t err;
 	upgrade_info.Rec_Data_Len = 0;
 	/*按照每一包（50K）去获取并升级，后期可能修改*/
 	for(;upgrade_info.Req_Pack<=upgrade_info.PackSize+1;upgrade_info.Req_Pack++)
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		/*等待接收到完整50K正确固件包完成信号量 */
 		err = xSemaphoreTake(GettingPackBinarySemaphore,portMAX_DELAY);
 		upgrade_info.Req_Pack = upgrade_info.Rev_Pack+1;		/*已经获取到的包号码*/
@@ -116,6 +122,7 @@ static void gGetPackToFlash(void)
 /*升级处理任务*/
 static uint8_t sInterUpgradeProcess()
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	int ret = -1;
 	/*首先获取升级包存储到FLASH*/
 	if(upgrade_info.measure == diff)
@@ -199,16 +206,19 @@ static uint8_t sGetLength(uint8_t num_high,uint8_t num_low){
 /*升级函数 ----测试版本printf*/
 uint8_t startUpgrade(void)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	int ret = -1;
 	int i = 0;
 	uint8_t sLinelen = 0;
 	uint32_t sReadFlashDataLen = 0;
+	HAL_IWDG_Refresh(&hiwdg);
 	if(CanPre() != CAN_PRE_OK)
 	{
 		LOG(LOG_ERROR,"can pre failed .Please check can connection.\r\n");
 		ret = upgradeFAIL;
 		return ret;	
-	}		
+	}
+	HAL_IWDG_Refresh(&hiwdg);
 	memset(&msg_s19_line,0,sizeof(msg_s19_line));										//用于从FLASH中读取固件包
 	memset(upgrade_info.LinePack,0,sizeof(upgrade_info.LinePack));
 	STMFLASH_Read(PACK_ADDR_START,(uint8_t*)&msg_s19_line,sizeof(msg_s19_line));	
@@ -232,8 +242,10 @@ uint8_t startUpgrade(void)
 		ret = upgradeFAIL;
 		return ret;			
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	while(slineJudge(msg_s19_line.type)==middleline)
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		//LOG(LOG_INFO,"upgrade_info.LinePack: %s \r\n sLinelen:%d\r\n",upgrade_info.LinePack,sLinelen);
 		//printf("%s\n",upgrade_info.LinePack);
 		if(CanSendLinePack(upgrade_info.LinePack)!=CAN_PRE_OK)
@@ -254,7 +266,8 @@ uint8_t startUpgrade(void)
 			ret = upgradeFAIL;
 			return ret;				
 		}
-	}	
+	}
+	HAL_IWDG_Refresh(&hiwdg);	
 	if(CanSendEndPack()!=CAN_PRE_OK)
 	{
 		LOG(LOG_ERROR,"can last line upgrade is not correct.\r\n");
@@ -270,6 +283,7 @@ uint8_t startUpgrade(void)
 static void sOnlineUpgrade(void){
 	int ret = -1;
 	/*防止按键误触发*/
+	HAL_IWDG_Refresh(&hiwdg);
 	if(upgrade_info.measure != sametime && upgrade_info.measure != diff && gFlag.DiffUpgradeStartFlag != DIFF_START_FLAG){
 		/*不属于工作模式任何一种，为按键误触发，直接返回*/
 		LOG(LOG_ERROR,"wrong button!\r\n");
@@ -328,11 +342,13 @@ static uint8_t sSDUpgrade(void){
 	else{
 		printf("open file success!\r\n");
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	if(CanPre() != CAN_PRE_OK){
 		LOG(LOG_ERROR,"can pre failed .Please check can connection.\r\n");
 		ret = upgradeFAIL;
 		return ret;		
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	uint8_t sLinelen = 0;
 	uint32_t sReadFlashDataLen = 0;
 	memset(&msg_s19_line,0,sizeof(msg_s19_line));										//用于从FLASH中读取固件包
@@ -358,6 +374,7 @@ static uint8_t sSDUpgrade(void){
 	}
 	while(slineJudge(msg_s19_line.type)==middleline)
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		//printf("%s\n",upgrade_info.LinePack);
 		
 		if(CanSendLinePack(upgrade_info.LinePack)!=CAN_PRE_OK)
@@ -378,6 +395,7 @@ static uint8_t sSDUpgrade(void){
 			return ret;			
 		}
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	/*已经到最后一行*/
 	if(CanSendEndPack()!=CAN_PRE_OK)
 	{
@@ -400,6 +418,7 @@ static void sReadConfigFile(void)
 	else{
 		printf("open file success!\r\n");
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	memset(rtext,0,sizeof(rtext));
 	retSD = f_read(&fil,rtext,sizeof(rtext),(UINT *)&bytesread);
 	if(retSD)
@@ -504,6 +523,7 @@ void Fatfs_RW_test(void)
 /*SD卡升级---测试版*/
 static void sOfflineUpgrade(void){
 	int ret  = -1;
+	HAL_IWDG_Refresh(&hiwdg);
 	MX_FATFS_Init();
 	LOG(LOG_INFO,"*******start upgrade sd ********\r\n");
 	/*挂接文件系统，重新挂接相当于初始化*/
@@ -518,8 +538,10 @@ static void sOfflineUpgrade(void){
 		printf("file mount success!\r\n");
 	}
 	/*读取config文件*/
+	HAL_IWDG_Refresh(&hiwdg);
 	sReadConfigFile();
 	/*服务固件文件，开始进行升级*/
+	HAL_IWDG_Refresh(&hiwdg);
 	ret = sSDUpgrade();
 	/*升级成功*/
 	if(ret == upgradeOK)
@@ -546,6 +568,7 @@ void UpgradeTask(void *pArg)
 		/*等待信号同步*/
 		Down_OK_Led_Off;
 		Job_OK_Led_Off;
+		HAL_IWDG_Refresh(&hiwdg);
 		err = xSemaphoreTake(ConfigBinarySemaphore,portMAX_DELAY);
 		/*成功获取到信号量*/
 		if(err == pdTRUE)

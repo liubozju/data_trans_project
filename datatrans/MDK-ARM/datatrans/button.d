@@ -40,3 +40,4 @@ datatrans\button.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 datatrans\button.o: ../Inc/usart.h
 datatrans\button.o: ../Inc/sys.h
 datatrans\button.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+datatrans\button.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

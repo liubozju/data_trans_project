@@ -85,7 +85,8 @@ int main(void)
 
 void StartTask(void *pvParameter)
 {	
-		 taskENTER_CRITICAL();     
+		 taskENTER_CRITICAL();
+		 HAL_IWDG_Refresh(&hiwdg);
 		 MsgInfoConfig();																												/*配置Message 串口接收发送队列*/
 		 gRemoteIpPortConfig("47.111.9.209","9090"); 			/*配置远端IP*/
 		 gGprs.gGPRSConfig();									/*模组相关信息配置*/
@@ -157,7 +158,8 @@ void StartTask(void *pvParameter)
 			upgrade_info.method = offline;
 			xEventGroupSetBits(InteracEventHandler,EventSDModeLedOn);
 			xEventGroupClearBits(InteracEventHandler,EventNETModeLedOn);
-		}	
+		}
+		HAL_IWDG_Refresh(&hiwdg);
 	  vTaskDelete(StartTaskHanhler);
 	  taskEXIT_CRITICAL();     					 
 }

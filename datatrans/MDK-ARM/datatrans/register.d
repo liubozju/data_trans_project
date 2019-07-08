@@ -61,3 +61,4 @@ datatrans\register.o: ..\Src\inc\Interactive.h
 datatrans\register.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 datatrans\register.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
 datatrans\register.o: ../Inc/gpio.h
+datatrans\register.o: ../Inc/iwdg.h

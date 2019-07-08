@@ -9,6 +9,7 @@
 #include "upgrade.h"
 #include "string.h"
 #include "md5.h"
+#include "iwdg.h"
 
 QueueHandle_t UsartRecMsgQueue;   //接收信息队列句柄
 static QueueHandle_t UsartSenMsgQueue;   //发送信息队列句柄
@@ -87,6 +88,7 @@ static uint16_t sGetbufLen(char * msg)
 	uint16_t len = 0;
 	uint8_t i = 0;
 	uint8_t j = 0;
+	HAL_IWDG_Refresh(&hiwdg);
 	if(NULL != strstr(msg,REV_DATA))					//数据包中存在TCPREV包头
 	{
 		msg_start=strstr(msg,REV_DATA);			/*获取包头信息*/
@@ -120,6 +122,7 @@ static uint16_t sGetbufLen(char * msg)
 
 static uint8_t sAnalyzePack(char *msg)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	uint8_t len_count = 0;
 	char * msg_start=NULL;
 	uint16_t buf_len = sGetbufLen(msg);			/*获取接收到的字符数量*/
@@ -127,6 +130,7 @@ static uint8_t sAnalyzePack(char *msg)
 	//LOG(LOG_INFO,"buf_len : %d len_count: %d\r\n",buf_len,len_count);
 	if(NULL != strstr(msg,REV_DATA))
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		msg_start=strstr(msg,REV_DATA);			/*获取包头信息*/
 		if(gpack_data.Pack_Data_len > 50*1024)	/*如果一包数据过长*/
 		{
@@ -136,12 +140,14 @@ static uint8_t sAnalyzePack(char *msg)
 		gpack_data.Pack_Data_len+=buf_len;
 		return PackOK;
 	}
+	HAL_IWDG_Refresh(&hiwdg);
   return PackFail; 	
 }
 
 /**解析平台下发的配置包*/
 static void sConfigAnalyze(char * msg)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	char * str = pvPortMalloc(600);
 	memset(str,0,600);
 	volatile char * msg_start=NULL;
@@ -171,10 +177,12 @@ static void sConfigAnalyze(char * msg)
 		LOG(LOG_INFO,"%d %d %d %d \r\n",can_id.Can_num,can_id.RecID,can_id.SendID,upgrade_info.PackSize);
 		cJSON_Delete(res);
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	vPortFree(str);
 }
 
 static uint8_t sMd5Check(void){
+	HAL_IWDG_Refresh(&hiwdg);
 	unsigned char decrypt[16]={0}; 
   char decrypt_str[35]={0};
 	memset(decrypt,0,16);memset(decrypt_str,0,35);
@@ -191,6 +199,7 @@ static uint8_t sMd5Check(void){
 	HexToStrLow(decrypt,decrypt_str,16);
 	LOG(LOG_INFO,"decrypt_str: %s\r\n",decrypt_str);
 	LOG(LOG_INFO,"upgrade_info.md5: %s\r\n",upgrade_info.md5);
+	HAL_IWDG_Refresh(&hiwdg);
 	/*校验包正确*/
 	if(strcmp(decrypt_str,upgrade_info.md5) == 0){
 		return PackOK;
@@ -202,6 +211,7 @@ static uint8_t sMd5Check(void){
 /**解析平台下发的配置包*/
 static void sCheckAnalyze(char * msg)
 {
+	HAL_IWDG_Refresh(&hiwdg);
 	char * str = pvPortMalloc(2048);
 	memset(str,0,2048);
 	volatile char * msg_start=NULL;
@@ -210,10 +220,12 @@ static void sCheckAnalyze(char * msg)
 	uint16_t sPackData_len = 0;
 	uint16_t buf_len = sGetbufLen(msg);			/*获取接收到的字符数量*/
 	uint8_t len_count = getIntNum(buf_len);					/*获取buf_len整数位数*/
+	HAL_IWDG_Refresh(&hiwdg);
 	if(NULL != strstr(msg,LEFT_JSON) && NULL != strstr(msg,RIGHT_JSON))
 	{
 		msg_start=strstr(msg,LEFT_JSON);			/*获取配置JSON信息*/
 		msg_end = strstr(msg,RIGHT_JSON);
+		HAL_IWDG_Refresh(&hiwdg);
 		if(*(msg_start-1)!= ',')							/*说明发生了粘包现象*/
 		{
 			msg_tcp_rev = strstr(msg,REV_DATA);
@@ -225,6 +237,7 @@ static void sCheckAnalyze(char * msg)
 			memcpy(gpack_data.Pack_Data+gpack_data.Pack_Data_len,msg_tcp_rev+11+len_count+1,sPackData_len);
 			gpack_data.Pack_Data_len+=sPackData_len;
 		}
+		HAL_IWDG_Refresh(&hiwdg);
 		uint8_t len = msg_end - msg_start;
 		for(int i =0;i<len+1;i++)
 		{
@@ -242,6 +255,7 @@ static void sCheckAnalyze(char * msg)
 		//LOG(LOG_INFO,"%s %d \r\n",upgrade_info.md5,upgrade_info.Rev_Pack);
 		cJSON_Delete(res);
 	}
+	HAL_IWDG_Refresh(&hiwdg);
 	vPortFree(str);
 	/*进行md5校验包的比对*/
 	if(sMd5Check()==PackOK){
@@ -263,18 +277,21 @@ void MessageReceiveTask(void *pArg)   //命令解析任务
 	int buf_len = 0;
 	while(1)
 	{
+		HAL_IWDG_Refresh(&hiwdg);
 		memset(buf,0,2500);
 		xQueueReceive(UsartRecMsgQueue,buf,portMAX_DELAY);
 		buf_len = strlen(buf);
 		//LOG(LOG_DEBUG,"Get buf %s\r\n",buf);
 		if(NULL != strstr(buf,CHECKSUM))																											/*接收到md5校验包*/
 		{
+			HAL_IWDG_Refresh(&hiwdg);
 			sCheckAnalyze(buf);
 			/*释放信号量*/
 			buf_len = 0;
 		}
 		if(NULL != strstr(buf,CONFIG))																												/*接收到配置包*/
 		{
+			HAL_IWDG_Refresh(&hiwdg);
 			sConfigAnalyze(buf);
 			getfirm = GETFIRM_START;
 			buf_len = 0;
@@ -283,6 +300,7 @@ void MessageReceiveTask(void *pArg)   //命令解析任务
 		}
 		if(getfirm == GETFIRM_START && buf_len != 0 && NULL != strstr(buf,REV_DATA) && NULL ==strstr(buf,"OK"))												/*接收到升级包*/
 		{
+			HAL_IWDG_Refresh(&hiwdg);
 			sAnalyzePack(buf);
 			buf_len = 0;
 		}
@@ -394,6 +412,7 @@ void MessageSendTask(void *pArg)
 			i++;
 			if(Message.OKBinarySemaphore!=NULL)
 			{
+				HAL_IWDG_Refresh(&hiwdg);
 			   err = xSemaphoreTake(Message.OKBinarySemaphore,1000);				/*等待模组返回OK。任何命令模组都会有一个OK返回*/
 				{
 					if(err == pdTRUE)																						/*收到OK，说明发送成功。退出循环*/

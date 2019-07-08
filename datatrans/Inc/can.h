@@ -111,7 +111,6 @@ int gCAN2_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned 
 /* USER CODE END Prototypes */
 
 
-extern void CANSendTask(void *pArg);
 extern uint8_t CanSendEndPack(void);
 extern void gUploadErrorCode(uint8_t errorType);
 extern uint8_t CanPre(void);
