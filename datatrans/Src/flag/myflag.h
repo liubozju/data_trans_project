@@ -12,7 +12,9 @@
 
 
 void platformFlagInit(void );
-
+extern void gWriteDiffStartFlag(uint8_t sFlag);
+extern void gWriteDiffEndFlag(uint8_t sFlag);
+extern void gClearDiffFlag(void);
 
 #endif 
 

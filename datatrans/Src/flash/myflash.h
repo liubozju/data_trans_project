@@ -7,16 +7,17 @@
 
 //FLASH起始地址
 #define STM32_FLASH_BASE 0x08000000 	//STM32 FLASH的起始地址
-#define STM_PAGE_SIZE  1024*10		        //10K
+#define STM_PAGE_SIZE  1024		        //1K
 #define STM_SECTOR_SIZE 1024*128			//128K
 
 
 /*标志位地址*/
 
 /*配置存储区地址*/
-#define WRITE_ADDR_START 0X08020000							//扇区5  用于保存数据，128K大小
-#define FIRST_TIME_FLAG	 (WRITE_ADDR_START+10)		//初始化永久数据区域，仅仅运行一次
-#define UPDATE_FLAG			(FIRST_TIME_FLAG+10)		//尽量不使用2K边缘的数据单元  存储更新标记  
+#define WRITE_ADDR_START 0X08040000							//扇区5  用于保存数据，128K大小
+#define GLOBAL_FLAG	 (WRITE_ADDR_START+100)		//初始化永久数据区域，仅仅运行一次
+
+#define TEST_ADDR	 (WRITE_ADDR_START+100)		//初始化永久数据区域，仅仅运行一次
 
 /**/
 #define testflag1		(UPDATE_FLAG+20)
@@ -24,7 +25,7 @@
 #define testflag3		(testflag2+20)
 
 /*500K空间的存储地址   每页128K，存储包信息，每页只用128KB*/
-#define PACK_ADDR_START 0X08040000							//扇区6  用于保存数据，128K大小
+#define PACK_ADDR_START 0X08060000							//扇区7  用于保存数据，128K大小
 
 
 
@@ -66,6 +67,8 @@ void HxCheckFlash(void);
 
 static uint32_t GetSector(uint32_t Address);								//根据输入地址，返回sector号码
 static uint32_t GetSectorAddr(uint32_t Address);
+extern void STMFLASH_Write_NoCheck(uint32_t WriteAddr, uint8_t *pBuffer, uint16_t NumToWrite);
+extern void STMFLASH_Write_WithBuf(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite);
 
 
 #endif

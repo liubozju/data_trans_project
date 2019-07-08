@@ -18,7 +18,8 @@ extern SemaphoreHandle_t NetBinarySemaphore;
 extern SemaphoreHandle_t HeartBinarySemaphore;
 extern SemaphoreHandle_t RigisterBinarySemaphore;
 extern gPack_Data gpack_data;
-
+extern SemaphoreHandle_t CanRevStatus;	
+extern SemaphoreHandle_t Can2RevStatus;	
 GETFIRM getfirm;
 
 static Msg Message;
@@ -160,7 +161,7 @@ static void sConfigAnalyze(char * msg)
 		cJSON * RecID = cJSON_GetObjectItem(res,"recID");
     can_id.RecID= RecID->valueint;
 		cJSON * SendID = cJSON_GetObjectItem(res,"sendID");
-    can_id.SendID= SendID->valueint;
+    can_id.SendID= SendID->valueint;		
 		cJSON * cannum = cJSON_GetObjectItem(res,"cannum");
     can_id.Can_num= cannum->valueint;
 		cJSON * PaSize = cJSON_GetObjectItem(res,"packSize");
@@ -414,6 +415,8 @@ void MessageSendTask(void *pArg)
 /*串口接收、发送队列创建*/
 void MsgInfoConfig(void)
 {
+	CanRevStatus = xSemaphoreCreateBinary();
+	Can2RevStatus = xSemaphoreCreateBinary();
 	GettingPackBinarySemaphore= xSemaphoreCreateBinary();
 	DeviceSendSemaphore = xSemaphoreCreateBinary();
 	HeartBinarySemaphore = xSemaphoreCreateBinary();

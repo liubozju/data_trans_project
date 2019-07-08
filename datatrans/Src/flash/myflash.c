@@ -6,8 +6,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include <string.h>
+#include "stdio.h"
 
-uint32_t STMFLASH_BUF[STM_PAGE_SIZE/4]={0};
+uint8_t STMFLASH_BUF[STM_PAGE_SIZE]={0};
 
 //读取指定地址的字(32位数据) 
 //faddr:读地址 
@@ -41,10 +42,10 @@ uint8_t STMFLASH_ReadHalfWord(uint32_t faddr)
 void STMFLASH_Pagebuf(uint32_t ReadAddr)
 {
 	uint16_t i;
-	for(i=0;i<256*10;i++)															//缓存10K的数据，每一页使用10K足够存储数据了。
+	for(i=0;i<1024;i++)															//缓存10K的数据，每一页使用1K足够存储数据了。
 	{
-		STMFLASH_BUF[i] = STMFLASH_ReadWord(ReadAddr);
-		ReadAddr += 4;
+		STMFLASH_BUF[i] = STMFLASH_ReadByte(ReadAddr);
+		ReadAddr += 1;
 	}
 }
 
@@ -120,7 +121,8 @@ void STMFLASH_Write(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite)
 	//不管有没有进行扇区的擦除，都直接写入数据
 	while(WriteAddr<endaddr){
 			if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,WriteAddr,*pBuffer)!=HAL_OK)//写入整个页的数据
-			{ 
+			{
+				printf("write data failed .\r\n");
 				break;	//写入异常
 			}
 			pBuffer++;
@@ -281,6 +283,114 @@ static uint32_t GetSectorAddr(uint32_t Address)
  
   return sectoraddr;
 }
+
+//无数据检测的写入flash
+void STMFLASH_Write_NoCheck(uint32_t WriteAddr, uint8_t *pBuffer, uint16_t NumToWrite)   
+{ 			 		 
+	uint16_t i;
+	for (i = 0; i < NumToWrite; i++)
+	{
+		if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,WriteAddr,*pBuffer)!=HAL_OK)//写入整个页的数据
+		{
+			printf("write failed\r\n");
+			break;	//写入异常
+		}
+		pBuffer++;
+		WriteAddr += 1; 
+	}  
+} 
+
+//写入flash，如果对应地址有数据，则进行页擦除
+void STMFLASH_Write_WithBuf(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite)	
+{
+	FLASH_EraseInitTypeDef FlashEraseInit;
+	uint32_t PageError=0;
+	uint32_t addrx = WriteAddr;				//写入地址
+	uint32_t offaddr = 0;
+	uint32_t secremain = 0;
+	uint32_t secoff=0;
+  uint32_t i =0;	
+	int SectorStart;uint32_t SectorStartAddr = 0;
+	int SectorEnd;
+	if(WriteAddr<STM32_FLASH_BASE||WriteAddr%4)return;	//非法地址
+    
+	HAL_FLASH_Unlock();             //解锁	
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | 
+                          FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+
+	SectorStartAddr = GetSectorAddr(WriteAddr);			//扇区起始地址，，头1K空间用于写入数据
+	offaddr = WriteAddr - SectorStartAddr;					//写入数据在扇区中的偏移
+	secoff = offaddr ;														//偏移转换为字
+	secremain = STM_PAGE_SIZE- secoff;							//1K剩余的字空间
+	if(NumToWrite < secremain)
+	{
+		secremain = NumToWrite;
+	}
+	while (1) 
+	{	
+		STMFLASH_Pagebuf(SectorStartAddr); //缓存需要写入页的数据
+		for (i = 0; i < secremain; i++) 
+		{
+			if (STMFLASH_BUF[secoff + i] != 0XFF)break;   //写入区域有数据
+		}	
+		if(i < secremain)  
+		{
+			SectorStart = GetSector(addrx);	
+			FlashEraseInit.TypeErase=FLASH_TYPEERASE_SECTORS;       //擦除类型，页擦除 
+			FlashEraseInit.Sector=SectorStart;         //要擦除的页基地址
+			FlashEraseInit.VoltageRange  = FLASH_VOLTAGE_RANGE_3;
+			FlashEraseInit.NbSectors=1;                             //一次只擦除一个页
+			if(HAL_FLASHEx_Erase(&FlashEraseInit,&PageError)!=HAL_OK) 
+			{
+				printf("erase failed!\r\n");
+				break;//flash擦除发生错误了	
+			}
+			for (i = 0; i < secremain; i++) //把写入的数据覆盖到对应位置，保留该页其他位置的数据信息
+			{
+				STMFLASH_BUF[i + secoff] = pBuffer[i];	  
+			}
+			//把该页缓存数据写入flash
+			STMFLASH_Write_NoCheck(SectorStartAddr, STMFLASH_BUF, STM_PAGE_SIZE/4);
+			memset(STMFLASH_BUF,0,STM_PAGE_SIZE); //清除缓存区数据
+		}
+		else 
+		{
+			STMFLASH_Write_NoCheck(WriteAddr, pBuffer, secremain);//写入位置没有数据时，直接写入
+		}
+		if (NumToWrite == secremain)break; 
+	}
+	HAL_FLASH_Lock();           //上锁
+} 
+
+
+
+
+//按字节写入flash
+void STMFLASH_WriteByte(uint32_t WriteAddr,uint8_t *pBuffer,uint32_t NumToWrite)  
+{
+	uint32_t cnt,i;
+	uint32_t data_remain = 0,Writetimes = 0;
+	uint32_t writebuf[150]= {0};
+	
+	
+	Writetimes  = NumToWrite /4;    //写入次数
+	data_remain = NumToWrite %4;    //不足4byte数据
+	for(cnt = 0;cnt < Writetimes;cnt++)//4个8bit数据组合缓存进一个32bit
+	{
+		writebuf[cnt] = (uint32_t)(pBuffer[4*cnt+3]<<24)+(pBuffer[4*cnt+2]<<16)
+		                      +(pBuffer[4*cnt+1]<<8)+(pBuffer[4*cnt]);
+	}
+	if(data_remain > 0)
+	{
+		Writetimes++;       //有不足4byte数据，写入次数+1
+		for(i = 0;i < data_remain;i++) //不足4byte的数据按倒序写入32位缓存中
+		{
+			writebuf[cnt] += (uint32_t)(pBuffer[4*cnt+3-i]<<(24-8*i));
+		}
+	}
+	//STMFLASH_Write_WithBuf(WriteAddr,writebuf,Writetimes); //写入flash，最小单位4byte
+}
+
 
 
 /*  测试使用代码

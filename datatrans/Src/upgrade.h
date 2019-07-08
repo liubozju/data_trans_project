@@ -12,6 +12,25 @@
 #include "task.h"
 
 #define gPack_Data_Len 51*1024		/*多留出来1K的空间，防止接收数据过多，导致数组越界产生不可知的影响*/
+//#define gPack_Data_Len 1*1024		/*多留出来1K的空间，防止接收数据过多，导致数组越界产生不可知的影响*/
+
+#define SD_MODE_FLAG 	  0x55
+#define NET_MODE_FLAG 	0x66
+
+#define DIFF_START_FLAG	0x33
+#define DIFF_END_FLAG	  0x77
+
+#define DIFF_CLEAR_FLAG	0x00
+
+typedef struct{
+	uint8_t ModeFlag;					/*模式标记*/
+	uint8_t DiffUpgradeStartFlag;			/*离线升级标记*/
+	uint8_t DiffUpgradeEndFlag;			/*离线升级标记*/
+	uint8_t DiffCannum;							/*离线升级使用的CAN接口*/
+	uint8_t DiffCanSendid;
+	uint8_t DiffCanRevid;
+}gFlag_Data;
+
 
 typedef struct{
 	uint32_t Pack_Data_len;

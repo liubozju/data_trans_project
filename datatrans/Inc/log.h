@@ -15,6 +15,8 @@
 
 #define LOG(level, format, ...) 	do{	printf("[%s | %s @%s,%d] " format ,level,__func__,__FILE__,__LINE__,##__VA_ARGS__);	}while(0)
 
+#define Debug
+
 #ifdef Debug
 #define Log(level,format, ...)		do{	printf("[%s | %s @%s,%d] " format ,level,__func__,__FILE__,__LINE__,##__VA_ARGS__);	}while(0)
 #else

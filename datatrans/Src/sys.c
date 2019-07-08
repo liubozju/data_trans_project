@@ -1,5 +1,10 @@
 #include "sys.h"
 #include "usart.h"
+#include "stdio.h"
+#include "button.h"
+#include "tim.h"
+extern TIM_HandleTypeDef htim4;
+
 
 /**
   * @brief System Clock Configuration
@@ -80,7 +85,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+	if(htim->Instance == TIM4)
+	{
+		HAL_TIM_Base_Stop_IT(&htim4);
+		Button_Process();
+		HAL_TIM_Base_Start_IT(&htim4);
+	}
   /* USER CODE END Callback 1 */
 }
 

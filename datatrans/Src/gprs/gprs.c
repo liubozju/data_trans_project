@@ -5,6 +5,7 @@
 #include "timers.h"
 #include "register.h"
 #include "Interactive.h"
+#include "upgrade.h"
 
 #define HEARTBEAT_PACK 	"{\"type\":\"heartbeat\",\"imei\":\"%s\"}"
 
@@ -13,10 +14,13 @@ extern QueueHandle_t UsartRecMsgQueue;        /*消息接收队列*/
 extern TaskHandle_t MsgSendTaskHanhler;       /*消息封装发送任务*/
 extern TimerHandle_t connectTimerHandler;
 extern xTimerHandle NetTimerHandler;
+extern gFlag_Data gFlag;
 
 SemaphoreHandle_t HeartBinarySemaphore;		/*设备注册使用信号量*/
 SemaphoreHandle_t NetBinarySemaphore;					/*联网的信号量*/
 gIPPort	gRemoteIpPor;													/*远端IP定义*/
+
+uint8_t gNetConnectFlag = 0;									/*是否已经连接网络标记*/
 
 /*GPRS模组的定义*/
 gprs gGprs={
@@ -38,14 +42,15 @@ int gDeviceConnect(void)
 		{
      	LOG(LOG_TRACE,"GPRS Connecet to cloud successful\r\n");
 			gGprs.gprsFlag.gGPRSConnectFlag = 0;
-			xEventGroupSetBits(InteracEventHandler,EventNetledOn);
-			gGprs.gprsFlag.gRegisterFlag =1;
-			gDeviceRegister();
-			gGprs.gprsFlag.gRegisterFlag =0;
-			LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
-			xTimerStart(NetTimerHandler,portMAX_DELAY);	
-//		  xTimerStart(testTimerHandler,portMAX_DELAY);
-//			xTimerStart(SearchCardTimerHandler,portMAX_DELAY);
+			if(gFlag.ModeFlag == NET_MODE_FLAG)
+			{
+				gGprs.gprsFlag.gRegisterFlag =1;
+				gDeviceRegister();
+				gGprs.gprsFlag.gRegisterFlag =0;
+				gNetConnectFlag = NetConnected;
+				LOG(LOG_DEBUG,"start timer NetTimerHandler\r\n");
+				xTimerStart(NetTimerHandler,portMAX_DELAY);					
+			}
 			return 1;
 		}
     	LOG(LOG_TRACE,"Connect to cloud failed %d.....\r\n",i+1);
@@ -76,7 +81,7 @@ static int sSendRspData(const char *cmd,const char * rsp)
 			count++;
 			if(gGprs.GprsConnectBinarySemaphore!=NULL)
 			{
-			    err = xSemaphoreTake(gGprs.GprsConnectBinarySemaphore,2000);
+			    err = xSemaphoreTake(gGprs.GprsConnectBinarySemaphore,5000);
 					if(err == pdTRUE)
 					{
 						break;
@@ -100,12 +105,16 @@ static int sSendRspData(const char *cmd,const char * rsp)
 			{
 				LOG(LOG_ERROR,"No GPRS semaphore \r\n");
 			}
-			if(count>=3)
+			if(count>=5)
 			{
-				//MessageSend("AT+CFUN=1,1\r\n",0);
-				LOG(LOG_ERROR,"GPRS not responding .Please check\r\n");
-				xTimerReset(connectTimerHandler,10000);				//GPRS没有返回，重新打开联网定时器。5S后开始
-				return -1; 
+				if(gFlag.ModeFlag == NET_MODE_FLAG){
+					MessageSend("AT+CFUN=1,1\r\n",0);
+					LOG(LOG_ERROR,"GPRS not responding .Please check\r\n");
+					sysReset();
+				}else{
+					LOG(LOG_ERROR,"GPRS not responding .Please check\r\n");
+					return 1;
+				}
 			}
 		}
 	return 1;
@@ -131,9 +140,9 @@ static int sSignalJudge(void){
 static int pdeviceConnect(void)
 {
 	LOG(LOG_TRACE,"Signal Strangth Testing\r\n");
+	HAL_Delay(2000);
 	sSendRspData("AT\r\n","OK");
-	HAL_Delay(5000);
-//	sSendRspData("ATi8\r\n","OK");	//在4G模组中没有这个版本指令
+	HAL_Delay(3000);
 	sSendRspData("ATE0\r\n","OK");
 	sSendRspData("AT+COPS?\r\n","OK");
 	sSendRspData("AT+IPR=460800\r\n","OK");
@@ -141,10 +150,10 @@ static int pdeviceConnect(void)
 	sSendRspData("AT+CMEE=2\r\n","OK");
 	sSendRspData("AT+CPIN?\r\n","+CPIN: READY");
 	sSendRspData("AT+CGREG?\r\n","+CGREG: 0,1");
-	sSignalJudge();										//在此处加上信号强度的判断
-	
-	// sSendRspData("AT+MIPCALL=1,\"CMNET\"\r\n","OK");
-	// sSendRspData("ATE+MIPCALL?\r\n",".");
+	if(gFlag.ModeFlag == NET_MODE_FLAG)
+	{
+		sSignalJudge();										//在此处加上信号强度的判断		
+	}	
 	sSendRspData("AT+CGDCONT=1,\"IP\",\"CMNET\"\r\n","OK");
 	sSendRspData("AT+XIIC=1\r\n","OK");
 	HAL_Delay(1000);
@@ -152,7 +161,6 @@ static int pdeviceConnect(void)
 	gTCPIPConfig();
 	if(sSendRspData((const char *)gGprs.gGPRSConnect,"TCPSETUP: 0") != 1)
 		return -1;
-	//sSendRspData("AT+MIPOPEN?\r\n","+MIPOPEN: 1,1");
 	return 1;
 }
 
@@ -347,6 +355,7 @@ static int sGetDeviceINFO(const char *cmd,const char *rsp)
 					if(err == pdTRUE)
 					{
 							char * rspbuf = pvPortMalloc(120);
+							memset(rspbuf,0,120);
 							xQueueReceive(gGprs.GPRSINFORepQueue,rspbuf,10);
 							if(sAnalysisRsp(rspbuf,rsp) == 1)		/*成功接收到数据*/
 							{
@@ -385,7 +394,7 @@ static int sGetDeviceINFO(const char *cmd,const char *rsp)
 /*获取设备CSQ*/
 int gGetDeviceINFO(const char * cmd,const char *rsp)
 {
-  	gGprs.gprsFlag.gINFOFlag = 1;			/*置位CSQ标记，用于串口命令解析*/
+  gGprs.gprsFlag.gINFOFlag = 1;			/*置位CSQ标记，用于串口命令解析*/
 	for(int i=0;i<5;i++)
 	{
 		if(sGetDeviceINFO(cmd,rsp)>0)
@@ -410,22 +419,25 @@ int HeartBeat(void)
   BaseType_t err;
   for(int i=0;i<3;i++)
   {
+		memset(str,0,200);
+		sprintf(str,HEARTBEAT_PACK,gGprs.gimei);
 		MessageSend(str,1);
-		err = xSemaphoreTake(HeartBinarySemaphore,30000);
+		err = xSemaphoreTake(HeartBinarySemaphore,5000);
 	  if(err == pdTRUE)
 		{
 			vPortFree(str);
       LOG(LOG_DEBUG,"heartrsp ok\r\n");
+			xEventGroupSetBits(InteracEventHandler,EventNetledOn);
+			xEventGroupClearBits(InteracEventHandler,EventNetledFlick);
+			gNetConnectFlag= NetConnected;
 			return 1;
 		}
-		LOG(LOG_ERROR,"register %d times\r\n",i);
+		LOG(LOG_ERROR,"send heart %d times\r\n",i);
   }
 	vPortFree(str);	
 	LOG(LOG_ERROR,"send heart failed\r\n");
-	LOG(LOG_ERROR,"System Rebooting\r\n");
-	NVIC_SystemReset();
+	sysReset();
 	return -1;		
-	
 }
 
 

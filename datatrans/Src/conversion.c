@@ -93,6 +93,13 @@ uint8_t getIntNum(uint16_t len){
 	return count;
 }
 
+/*十进制数据转换为对应十六进制数据***
+***  例如： 68---0x68
+*/
+uint16_t Int2Hex(uint16_t num){
+	return 0;
+}
+
 
 //HEX值转为ASCII型字符
 /*实例：  0x64--"64"*/

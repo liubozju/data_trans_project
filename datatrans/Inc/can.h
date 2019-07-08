@@ -101,10 +101,13 @@ extern CAN_HandleTypeDef hcan1;
 extern void _Error_Handler(char *, int);
 
 void MX_CAN1_Init(uint32_t RecID);
+void MX_CAN2_Init(uint32_t RecID);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_TRANSMIT1(void);
 int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data,const uint16_t datalen);
+int gCAN2_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned char * data,const uint16_t datalen);
+
 /* USER CODE END Prototypes */
 
 

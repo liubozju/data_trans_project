@@ -3,6 +3,7 @@
 #include "cjson.h"
 #include "message.h"
 #include <string.h>
+#include "Interactive.h"
 
 extern gprs gGprs;
 extern xTimerHandle NetTimerHandler;
@@ -38,6 +39,9 @@ int gDeviceRegister(void)
 			vPortFree(str);
 			vSemaphoreDelete(RigisterBinarySemaphore);
       LOG(LOG_DEBUG,"register ok\r\n");
+			xEventGroupSetBits(InteracEventHandler,EventNetledOn);
+			xEventGroupClearBits(InteracEventHandler,EventNetledFlick);
+			//Net_LED_On;
 			//xTimerStart(NetTimerHandler,portMAX_DELAY);
 			return 1;
 		}
@@ -46,6 +50,7 @@ int gDeviceRegister(void)
 	vPortFree(str);	
 	LOG(LOG_ERROR,"register failed\r\n");
 	LOG(LOG_ERROR,"System Rebooting\r\n");
+	Net_LED_Off;
 	NVIC_SystemReset();
 	return -1;		
 }

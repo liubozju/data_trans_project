@@ -52,7 +52,8 @@
 #define __MAIN_H__
 
 
-
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 #ifdef __cplusplus
  extern "C" {
