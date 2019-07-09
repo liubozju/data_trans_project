@@ -137,24 +137,25 @@ static uint8_t sInterUpgradeProcess()
 		/*边升级边下载*/
 		case sametime:
 			upgrade_reply(sdownloadOK);
-			//xEventGroupSetBits(InteracEventHandler,EventDownOk);
-			ret = upgradeFAIL;//startUpgrade();
-			HAL_Delay(2000);
+			ret = startUpgrade();
 			if(ret == upgradeOK)
 			{
 				upgrade_reply(supgradeOK);
 				xEventGroupSetBits(InteracEventHandler,EventFirmOk);
+				LOG(LOG_ERROR,"online upgrade success!\r\n");
 				break;
-			}
-			/*更新失败，灯全部熄灭*/
-			Down_OK_Led_Off;
-			Job_OK_Led_Off;
-			gUploadErrorCode(CAN_SEND_ERR);
-			xEventGroupSetBits(InteracEventHandler,EventFirmFail);
-			LOG(LOG_ERROR,"online upgrade FAIL!\r\n");
+			}else 
+			{
+				/*更新失败，灯全部熄灭*/
+				Down_OK_Led_Off;
+				Job_OK_Led_Off;
+				gUploadErrorCode(CAN_SEND_ERR);
+				xEventGroupSetBits(InteracEventHandler,EventFirmFail);
+				LOG(LOG_ERROR,"online upgrade FAIL!\r\n");
 
-			/*同样需要写FLASH区域配置信息，不过这里是升级完成后，直接清空*/
-				break;
+				/*同样需要写FLASH区域配置信息，不过这里是升级完成后，直接清空*/
+					break;				
+			}
 		/*先下载后升级*/
 		case diff:
 			xEventGroupSetBits(InteracEventHandler,EventDownOk);
@@ -302,7 +303,8 @@ static void sOnlineUpgrade(void){
 	/*离线下载后再升级  ---离线下载升级情况下，是不会有升级模式标识的*/
 	if(upgrade_info.measure != sametime && upgrade_info.measure != diff && gFlag.DiffUpgradeEndFlag == DIFF_END_FLAG)
 	{
-			xEventGroupSetBits(InteracEventHandler,EventDownOk);
+			LOG(LOG_ERROR,"online diff upgrade start!\r\n");
+			Down_OK_Led_On;
 			STMFLASH_Read(GLOBAL_FLAG,(uint8_t *)&gFlag,sizeof(gFlag));
 			can_id.Can_num = gFlag.DiffCannum;
 			can_id.RecID = gFlag.DiffCanRevid;
@@ -314,13 +316,14 @@ static void sOnlineUpgrade(void){
 				xEventGroupSetBits(InteracEventHandler,EventFirmOk);
 				/*升级成功---清除标记*/
 				gClearDiffFlag();
+				LOG(LOG_ERROR,"online diff upgrade success!\r\n");
 				return ;
 			}
 			/*更新失败，灯全部熄灭*/
 			Down_OK_Led_Off;
 			Job_OK_Led_Off;
 			xEventGroupSetBits(InteracEventHandler,EventFirmFail);
-			LOG(LOG_ERROR,"online upgrade FAIL!\r\n");
+			LOG(LOG_ERROR,"online diff upgrade FAIL!\r\n");
 	}
 }
 
@@ -407,6 +410,32 @@ static uint8_t sSDUpgrade(void){
 	return ret;	
 }
 
+/*根据字符串读取ID。例如："0xc8"---返回c8十六进制数据*/
+static uint16_t sGetID(char * str)
+{
+	uint16_t ret =0;
+	/*减去字符中ox长度*/
+	uint8_t IDlen = strlen(str)-2;
+	/*因为标准帧总共11位数据，3个字节*/
+	switch(IDlen){
+		case 0:
+			LOG(LOG_ERROR,"ID is wrong!\r\n");
+			break;
+		case 1:/*只有一个字节数据*/
+			ret = SignalStrToHex(str[2]);
+			break;
+		case 2:/*具有两个字节数据*/
+			ret = sGetLength(str[2],str[3]);
+			break;
+		case 3: /*具有三个字节数据*/
+			ret = SignalStrToHex(str[2])*255+sGetLength(str[2],str[3]);
+			break;
+		default:
+			LOG(LOG_ERROR,"no num.!\r\n");break;
+	}
+	return ret;
+}
+
 /*读取config文件，读取固件名称，CAN发送与接收ID*/
 static void sReadConfigFile(void)
 {
@@ -432,9 +461,11 @@ static void sReadConfigFile(void)
 	if(!res){printf("there is wrong!\r\n");}
 	memset(fota_filename,0,sizeof(fota_filename));
 	cJSON * RecID = cJSON_GetObjectItem(res,"recid");
-  can_id.RecID= RecID->valueint;
+	char * RecID_Str = RecID->valuestring;
+  can_id.RecID= sGetID(RecID_Str);
 	cJSON * SendID = cJSON_GetObjectItem(res,"sendid");
-  can_id.SendID= SendID->valueint;
+	char * SendID_Str = SendID->valuestring;
+  can_id.SendID= sGetID(SendID_Str);
 	cJSON * cannum = cJSON_GetObjectItem(res,"cannum");
   can_id.Can_num= cannum->valueint;
 	cJSON * FILENAME = cJSON_GetObjectItem(res,"filename");
@@ -524,6 +555,7 @@ void Fatfs_RW_test(void)
 static void sOfflineUpgrade(void){
 	int ret  = -1;
 	HAL_IWDG_Refresh(&hiwdg);
+	MX_SDIO_SD_Init();
 	MX_FATFS_Init();
 	LOG(LOG_INFO,"*******start upgrade sd ********\r\n");
 	/*挂接文件系统，重新挂接相当于初始化*/
@@ -566,10 +598,10 @@ void UpgradeTask(void *pArg)
 	BaseType_t err;
 	while(1){
 		/*等待信号同步*/
-		Down_OK_Led_Off;
-		Job_OK_Led_Off;
 		HAL_IWDG_Refresh(&hiwdg);
 		err = xSemaphoreTake(ConfigBinarySemaphore,portMAX_DELAY);
+		Down_OK_Led_Off;
+		Job_OK_Led_Off;
 		/*成功获取到信号量*/
 		if(err == pdTRUE)
 		{

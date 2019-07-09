@@ -5,6 +5,24 @@
 
 //ascii型字符转化为HEX值
 /*实例：  '64'--0x64   只可以转换大写A-F*/
+uint16_t SignalStrToHex(char num)
+{
+	uint16_t ret = 0;
+	if('0'<=num && num<='9')
+	{
+		ret = num-'0';
+	}else if('a'<=num && num<='z'){
+		ret = num-'0'-39;
+	}else if('A'<=num && num<='Z'){
+		ret = num-'0'-7;
+	}else{
+		LOG(LOG_ERROR,"num is wrong!\r\n");
+	}
+	return ret;
+}
+
+//ascii型字符转化为HEX值
+/*实例：  '64'--0x64   只可以转换大写A-F*/
 void StrToHex(char* str,uint8_t * hex,int strlen)
 {
 	int i = 0;

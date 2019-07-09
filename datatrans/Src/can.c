@@ -300,7 +300,7 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned c
 		{
 			/*此处如果发送失败需要上报发送失败的消息*/
 			LOG(LOG_ERROR,"sending wrong \r\n");
-			//gUploadErrorCode(CAN_SEND_ERR);
+			gUploadErrorCode(CAN_SEND_ERR);
 		  return 0;
 		}
 		sCount += 8;
@@ -323,7 +323,7 @@ int gCAN_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned c
 		{
 			/*此处如果发送失败需要上报发送失败的消息*/
 			LOG(LOG_ERROR,"sending wrong\r\n");
-			//gUploadErrorCode(CAN_SEND_ERR);
+			gUploadErrorCode(CAN_SEND_ERR);
 		 return 0;
 		}		
 	}
@@ -440,7 +440,7 @@ static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec
 	gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,send_data,datalen);
 	
 	/*发送完数据后，等待数据返回，时间1S*/
-	err = xSemaphoreTake(CanRevStatus,20000);
+	err = xSemaphoreTake(CanRevStatus,1000);
 	/*等到信号量*/
 	if(err == pdTRUE){
 			/*判断CAN接收到的数据是否和期望值不相同*/
@@ -448,31 +448,31 @@ static uint8_t CANSend(const unsigned char * send_data,const unsigned char * rec
 				rc = Can_Success;
 			}else if(send_data[0] == 0x04){		/*CAN发送解密帧有两种返回*/
 				if(memcmp(Decrypt_P_FAIL,can_recvmsg1.Data,8)==0){	/*收到解密失败帧*/
-					//gUploadErrorCode(CAN_DECRYPT_ERR);
+					gUploadErrorCode(CAN_DECRYPT_ERR);
 					LOG(LOG_ERROR,"Decrypt_P_FAIL\r\n");
 					rc = Can_Connect_Failed;
 				}else{		/*既不是解密成功帧  也不是解密失败帧  是错误帧*/
-					//gUploadErrorCode(CAN_WRONG_REV_ERR);
+					gUploadErrorCode(CAN_WRONG_REV_ERR);
 					LOG(LOG_ERROR,"Decrypt_P wrong FAIL\r\n");
 					rc = Can_Rev_Wrong;
 				}
 			}else if(send_data[2] == 0xFE){		/*行更新指令同样具有两种返回*/
 				if(memcmp(LineEnd_P_FAIL,can_recvmsg1.Data,8) == 0){			
 					LOG(LOG_ERROR,"LineEnd_P_FAIL\r\n");
-					//gUploadErrorCode(CAN_FILE_ERR);
+					gUploadErrorCode(CAN_FILE_ERR);
 					rc = Can_File_Wrong;
 				}else{	/*收到其他无意义信息*/
-					//gUploadErrorCode(CAN_WRONG_REV_ERR);
+					gUploadErrorCode(CAN_WRONG_REV_ERR);
 					LOG(LOG_ERROR,"LineEnd wrong FAIL\r\n");
 					rc = Can_Rev_Wrong;
 				}
 		}else{/*收到其他无意义信息*/
-			//gUploadErrorCode(CAN_WRONG_REV_ERR);
+			gUploadErrorCode(CAN_WRONG_REV_ERR);
 			LOG(LOG_ERROR,"CAN wrong FAIL\r\n");
 			rc = Can_Rev_Wrong;
 		}
 	}else{	/*没有接收到数据，等待超时，需要上报错误信息*/
-		//gUploadErrorCode(CAN_NO_REV_ERR);
+		gUploadErrorCode(CAN_NO_REV_ERR);
 		LOG(LOG_ERROR,"can is not responding.\r\n");
 		rc = Can_Rev_Wrong;
 	}
@@ -616,7 +616,7 @@ uint8_t CanPre(void)
 		memset(can_recvmsg1.Data,0,sizeof(can_recvmsg1.Data));
 		gCAN_SendData(can_id.SendID,CAN_ID_STD,CAN_RTR_DATA,SafeConnect_P,sizeof(SafeConnect_P));
 		/*发送完数据后，等待数据返回，时间1S*/
-		err = xSemaphoreTake(CanRevStatus,20000);
+		err = xSemaphoreTake(CanRevStatus,1000);
 		/*等到信号量*/
 		if(err == pdTRUE){
 			/*判断安全访问帧返回是否正确*/

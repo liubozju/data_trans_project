@@ -11,7 +11,7 @@ typedef enum{
 	PackFail,
 }pack_status;
 
-
+uint16_t SignalStrToHex(char num);
 void StrToHex(char* str,uint8_t * hex,int strlen);
 void HexToStr(uint8_t* hex,char * str,int hexlen);
 void HexToStrLow(uint8_t* hex,char * str,int hexlen);
