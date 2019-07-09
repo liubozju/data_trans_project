@@ -53,7 +53,7 @@ TaskHandle_t MsgRecTaskHanhler;                  //任务句柄
 //回调函数在message.c中定义，创建任务时注册          //任务函数
 
 /*数据包封装串口发送*/
-#define MsgSendTask_TASK_PRIO    5          //任务优先级
+#define MsgSendTask_TASK_PRIO    7          //任务优先级
 #define MsgSendTask_STK_SIZE     512        //任务堆栈大小
 TaskHandle_t MsgSendTaskHanhler;        //任务句柄
 

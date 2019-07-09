@@ -137,7 +137,7 @@ static uint8_t sInterUpgradeProcess()
 		/*边升级边下载*/
 		case sametime:
 			upgrade_reply(sdownloadOK);
-			xEventGroupSetBits(InteracEventHandler,EventDownOk);
+			//xEventGroupSetBits(InteracEventHandler,EventDownOk);
 			ret = upgradeFAIL;//startUpgrade();
 			HAL_Delay(2000);
 			if(ret == upgradeOK)
@@ -149,9 +149,9 @@ static uint8_t sInterUpgradeProcess()
 			/*更新失败，灯全部熄灭*/
 			Down_OK_Led_Off;
 			Job_OK_Led_Off;
+			gUploadErrorCode(CAN_SEND_ERR);
 			xEventGroupSetBits(InteracEventHandler,EventFirmFail);
 			LOG(LOG_ERROR,"online upgrade FAIL!\r\n");
-			gUploadErrorCode(CAN_SEND_ERR);
 
 			/*同样需要写FLASH区域配置信息，不过这里是升级完成后，直接清空*/
 				break;
