@@ -113,16 +113,19 @@ void ModeBt_Long_CallBack(void *btn)
 		xTimerStopFromISR(connectTimerHandler,0);
 		xEventGroupSetBitsFromISR(InteracEventHandler,EventSDModeLedOn,0);
 		xEventGroupClearBitsFromISR(InteracEventHandler,EventNETModeLedOn);
+		xEventGroupClearBitsFromISR(InteracEventHandler,EventNetledOn);
 	}else if(gFlag.ModeFlag ==SD_MODE_FLAG){
 		gFlag.ModeFlag = NET_MODE_FLAG;
 		STMFLASH_Write_WithBuf(GLOBAL_FLAG,(uint8_t *)&gFlag,sizeof(gFlag));
 		upgrade_info.method = online;
 		xEventGroupSetBitsFromISR(InteracEventHandler,EventNETModeLedOn,0);
 		xEventGroupClearBitsFromISR(InteracEventHandler,EventSDModeLedOn);
-		if(gNetConnectFlag == NetDisConnect)
-		{
-			xTimerStartFromISR(connectTimerHandler,0);
-		}
+		/*重新联网，因为正常SD卡使用时间会超过心跳时间*/
+		xTimerResetFromISR(connectTimerHandler,0);
+//		if(gNetConnectFlag == NetDisConnect)
+//		{
+//			xTimerStartFromISR(connectTimerHandler,0);
+//		}
 		xTimerStartFromISR(NetTimerHandler,0);
 	}
 	printf("gFlag.ModeFlag: %x \r\n",gFlag.ModeFlag);

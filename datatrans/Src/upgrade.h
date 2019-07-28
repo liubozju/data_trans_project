@@ -62,7 +62,7 @@ typedef enum{
 typedef struct{
 	uint8_t type[2];
 	uint8_t msg_len[2];
-	uint8_t data[80];				//地址域+数据域+校验和  最大长度为38个字节，76个字符，为避免少读，多读几个字节		
+	uint8_t data[280];				//地址域+数据域+校验和  最大长度为38个字节，76个字符，为避免少读，多读几个字节		
 }s19_msg;
 
 

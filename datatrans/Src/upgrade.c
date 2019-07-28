@@ -149,7 +149,7 @@ static uint8_t sInterUpgradeProcess()
 				/*更新失败，灯全部熄灭*/
 				Down_OK_Led_Off;
 				Job_OK_Led_Off;
-				gUploadErrorCode(CAN_SEND_ERR);
+				//gUploadErrorCode(CAN_SEND_ERR);
 				xEventGroupSetBits(InteracEventHandler,EventFirmFail);
 				LOG(LOG_ERROR,"online upgrade FAIL!\r\n");
 
@@ -243,17 +243,16 @@ uint8_t startUpgrade(void)
 		ret = upgradeFAIL;
 		return ret;			
 	}
+	HAL_Delay(50);
 	HAL_IWDG_Refresh(&hiwdg);
 	while(slineJudge(msg_s19_line.type)==middleline)
 	{
 		HAL_IWDG_Refresh(&hiwdg);
-		//LOG(LOG_INFO,"upgrade_info.LinePack: %s \r\n sLinelen:%d\r\n",upgrade_info.LinePack,sLinelen);
-		//printf("%s\n",upgrade_info.LinePack);
-		if(CanSendLinePack(upgrade_info.LinePack)!=CAN_PRE_OK)
+		while(CanSendLinePack(upgrade_info.LinePack,sLinelen)!=CAN_PRE_OK)
 		{
-			LOG(LOG_ERROR,"can line upgrade is not correct.\r\n");
-			ret = upgradeFAIL;
-			return ret;					
+			printf("%s\n",upgrade_info.LinePack);
+			LOG(LOG_ERROR,"can line upgrade is not correct.resending\r\n");
+			HAL_Delay(100);
 		}
 		memset(&msg_s19_line,0,sizeof(msg_s19_line));										//用于从FLASH中读取固件包
 		memset(upgrade_info.LinePack,0,sizeof(upgrade_info.LinePack));
@@ -375,19 +374,19 @@ static uint8_t sSDUpgrade(void){
 		ret = upgradeFAIL;
 		return ret;		
 	}
+	LOG(LOG_INFO,"can pre success .\r\n");
+	HAL_Delay(50);
 	while(slineJudge(msg_s19_line.type)==middleline)
 	{
 		HAL_IWDG_Refresh(&hiwdg);
-		//printf("%s\n",upgrade_info.LinePack);
-		
-		if(CanSendLinePack(upgrade_info.LinePack)!=CAN_PRE_OK)
+		while(CanSendLinePack(upgrade_info.LinePack,sLinelen)!=CAN_PRE_OK)
 		{
-			LOG(LOG_ERROR,"can line upgrade is not correct.\r\n");
-			ret = upgradeFAIL;
-			return ret;				
+			printf("%s\n",upgrade_info.LinePack);
+			LOG(LOG_ERROR,"can line upgrade is not correct.resending\r\n");
+			HAL_Delay(100);
 		}
 		memset(&msg_s19_line,0,sizeof(msg_s19_line));										//用于从FLASH中读取固件包
-		memset(upgrade_info.LinePack,0,sizeof(upgrade_info.LinePack));
+		memset(upgrade_info.LinePack,0,100);
 		f_gets((char *)&msg_s19_line,sizeof(msg_s19_line),&fil);
 		sLinelen=(sGetLength(msg_s19_line.msg_len[0],msg_s19_line.msg_len[1]))*2+4;
 		memcpy(upgrade_info.LinePack,&msg_s19_line,sLinelen);

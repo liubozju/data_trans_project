@@ -114,7 +114,7 @@ int gCAN2_SendData(uint32_t ID,uint8_t id_type,uint8_t data_type,const unsigned 
 extern uint8_t CanSendEndPack(void);
 extern void gUploadErrorCode(uint8_t errorType);
 extern uint8_t CanPre(void);
-extern uint8_t CanSendLinePack(uint8_t * sLinepack);
+extern uint8_t CanSendLinePack(uint8_t * sLinepack,uint8_t len);
 
 #ifdef __cplusplus
 }

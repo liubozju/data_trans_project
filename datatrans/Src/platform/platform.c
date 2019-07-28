@@ -19,7 +19,6 @@ void platformInit(void)
   MX_USART2_UART_Init(115200);		//串口通信，用于和LTE通信
   MX_IWDG_Init();
 	platformFlagInit();
-	
 }
 
 
