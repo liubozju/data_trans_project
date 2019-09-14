@@ -64,6 +64,7 @@
 
 /* USER CODE END Private defines */
 void MX_TIM4_Init(void);
+void MX_TIM6_Init(void);
 extern void _Error_Handler(char *, int);
 
 

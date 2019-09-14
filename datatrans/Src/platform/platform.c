@@ -16,6 +16,7 @@ void platformInit(void)
 	MX_DMA_Init();									//SD卡dma初始化
 	//MX_SDIO_SD_Init();
 	MX_TIM4_Init();
+	MX_TIM6_Init();
   MX_USART2_UART_Init(115200);		//串口通信，用于和LTE通信
   MX_IWDG_Init();
 	platformFlagInit();

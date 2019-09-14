@@ -14,6 +14,7 @@
 #include "iwdg.h"
 
 gFlag_Data gFlag;
+unsigned char gLEDBlinkFlag = 0;
 Upgrade_info upgrade_info;
 s19_msg msg_s19_line;
 gPack_Data  gpack_data;

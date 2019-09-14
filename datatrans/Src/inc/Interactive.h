@@ -17,6 +17,11 @@ typedef enum{
 	SD_BUTTON_OFF,
 }sdbutton_status;
 
+typedef enum{
+	LEDBLINK_FALSE = 0,
+	LEDBLINK_TRUE,
+}ledblink;
+
 extern EventGroupHandle_t InteracEventHandler;
 
 /*事件标志位*/
@@ -92,6 +97,16 @@ extern EventGroupHandle_t InteracEventHandler;
 
 #define BUZZER_Pin  GPIO_PIN_2
 #define BUZZER_GPIO_Port  GPIOC
+
+#define Down_OK         PBout(1)
+
+#define Down_OK_OFF(x)  (Down_OK = x) 
+#define Down_OK_CONV()  (Down_OK = ~Down_OK)
+
+#define Job_OK         PBout(0)
+#define Job_OK_OFF(x)  (Job_OK = x)
+#define Job_OK_CONV()  (Job_OK = ~Job_OK)
+
 
 
 void sInteractive_Init(void);

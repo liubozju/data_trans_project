@@ -3,8 +3,11 @@
 #include "stdio.h"
 #include "button.h"
 #include "tim.h"
-extern TIM_HandleTypeDef htim4;
+#include "Interactive.h"
 
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim6;
+extern unsigned char gLEDBlinkFlag;
 
 /**
   * @brief System Clock Configuration
@@ -90,6 +93,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		HAL_TIM_Base_Stop_IT(&htim4);
 		Button_Process();
 		HAL_TIM_Base_Start_IT(&htim4);
+	}
+	if(htim->Instance == TIM6)
+	{
+		static char flag = 0;
+		HAL_TIM_Base_Stop_IT(&htim6);
+		/*添加下载与升级时的LED闪烁*/
+		if(gLEDBlinkFlag == LEDBLINK_FALSE){
+			Down_OK_CONV();
+		}
+		HAL_TIM_Base_Start_IT(&htim6);
 	}
   /* USER CODE END Callback 1 */
 }
